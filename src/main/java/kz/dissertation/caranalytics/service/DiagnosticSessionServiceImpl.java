@@ -1,6 +1,7 @@
 package kz.dissertation.caranalytics.service;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import kz.dissertation.caranalytics.dto.DiagnosticReportResponse;
 import kz.dissertation.caranalytics.dto.DiagnosticSessionRequest;
@@ -12,15 +13,19 @@ import kz.dissertation.caranalytics.dto.RawObdFrameResponse;
 import kz.dissertation.caranalytics.dto.RecommendationResponse;
 import kz.dissertation.caranalytics.dto.ServiceCenterResponse;
 import kz.dissertation.caranalytics.dto.SparePartResponse;
+import kz.dissertation.caranalytics.dto.VehicleInfoItemResponse;
 import kz.dissertation.caranalytics.dto.VehicleResponse;
 import kz.dissertation.caranalytics.model.DiagnosticReport;
 import kz.dissertation.caranalytics.exception.ResourceNotFoundException;
 import kz.dissertation.caranalytics.model.DiagnosticSession;
 import kz.dissertation.caranalytics.model.FaultCode;
+import kz.dissertation.caranalytics.model.FaultCodeType;
 import kz.dissertation.caranalytics.model.ObdReading;
 import kz.dissertation.caranalytics.model.RawObdFrame;
 import kz.dissertation.caranalytics.model.Recommendation;
+import kz.dissertation.caranalytics.model.SeverityLevel;
 import kz.dissertation.caranalytics.model.Vehicle;
+import kz.dissertation.caranalytics.model.VehicleInfoItem;
 import kz.dissertation.caranalytics.repository.DiagnosticSessionRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -61,39 +66,56 @@ public class DiagnosticSessionServiceImpl implements DiagnosticSessionService {
         session.setStartedAt(sessionStartedAt);
         session.setOverallStatus(diagnosticAiAssistant.buildOverallStatus(request.getFaultCodes()));
 
-        request.getRawFrames().forEach(frameRequest -> {
+        safeList(request.getRawFrames()).forEach(frameRequest -> {
             RawObdFrame frame = new RawObdFrame();
             frame.setSession(session);
             frame.setMode(frameRequest.getMode());
             frame.setPid(frameRequest.getPid());
             frame.setRawResponse(frameRequest.getRawResponse());
             frame.setDecodedLabel(frameRequest.getDecodedLabel());
+            frame.setManufacturerSpecific(Boolean.TRUE.equals(frameRequest.getManufacturerSpecific()));
             frame.setFrameTimestamp(
                     frameRequest.getFrameTimestamp() == null ? sessionStartedAt : frameRequest.getFrameTimestamp()
             );
             session.getRawFrames().add(frame);
         });
 
-        request.getReadings().forEach(readingRequest -> {
+        safeList(request.getVehicleInfoItems()).forEach(itemRequest -> {
+            VehicleInfoItem item = new VehicleInfoItem();
+            item.setSession(session);
+            item.setInfoKey(itemRequest.getInfoKey());
+            item.setInfoValue(itemRequest.getInfoValue());
+            item.setSourceMode(itemRequest.getSourceMode());
+            session.getVehicleInfoItems().add(item);
+        });
+
+        safeList(request.getReadings()).forEach(readingRequest -> {
             ObdReading reading = new ObdReading();
             reading.setSession(session);
             reading.setParameterName(readingRequest.getParameterName());
             reading.setPidCode(readingRequest.getPidCode());
+            reading.setSourceMode(defaultString(readingRequest.getSourceMode(), "01"));
+            reading.setFreezeFrame(Boolean.TRUE.equals(readingRequest.getFreezeFrame()));
+            reading.setManufacturerSpecific(Boolean.TRUE.equals(readingRequest.getManufacturerSpecific()));
+            reading.setDescription(readingRequest.getDescription());
             reading.setParameterValue(readingRequest.getParameterValue());
             reading.setUnit(readingRequest.getUnit());
             session.getReadings().add(reading);
         });
 
-        if (request.getFaultCodes() != null) {
-            request.getFaultCodes().forEach(faultCodeRequest -> {
-                FaultCode faultCode = new FaultCode();
-                faultCode.setSession(session);
-                faultCode.setCode(faultCodeRequest.getCode());
-                faultCode.setDescription(faultCodeRequest.getDescription());
-                faultCode.setSeverity(faultCodeRequest.getSeverity());
-                session.getFaultCodes().add(faultCode);
-            });
-        }
+        safeList(request.getFaultCodes()).forEach(faultCodeRequest -> {
+            FaultCode faultCode = new FaultCode();
+            faultCode.setSession(session);
+            faultCode.setCode(faultCodeRequest.getCode());
+            faultCode.setDescription(faultCodeRequest.getDescription());
+            faultCode.setFaultCodeType(
+                    faultCodeRequest.getFaultCodeType() == null ? FaultCodeType.STORED : faultCodeRequest.getFaultCodeType()
+            );
+            faultCode.setSourceMode(defaultString(faultCodeRequest.getSourceMode(), "03"));
+            faultCode.setManufacturerSpecific(Boolean.TRUE.equals(faultCodeRequest.getManufacturerSpecific()));
+            faultCode.setSeverity(faultCodeRequest.getSeverity() == null ? SeverityLevel.MEDIUM : faultCodeRequest.getSeverity());
+            session.getFaultCodes().add(faultCode);
+        });
 
         diagnosticAiAssistant.buildRecommendations(request.getReadings(), request.getFaultCodes())
                 .forEach(draft -> {
@@ -174,13 +196,25 @@ public class DiagnosticSessionServiceImpl implements DiagnosticSessionService {
                                 frame.getPid(),
                                 frame.getRawResponse(),
                                 frame.getDecodedLabel(),
+                                frame.getManufacturerSpecific(),
                                 frame.getFrameTimestamp()
+                        ))
+                        .toList(),
+                session.getVehicleInfoItems().stream()
+                        .map(item -> new VehicleInfoItemResponse(
+                                item.getInfoKey(),
+                                item.getInfoValue(),
+                                item.getSourceMode()
                         ))
                         .toList(),
                 session.getReadings().stream()
                         .map(reading -> new ObdReadingResponse(
                                 reading.getParameterName(),
                                 reading.getPidCode(),
+                                reading.getSourceMode(),
+                                reading.getFreezeFrame(),
+                                reading.getManufacturerSpecific(),
+                                reading.getDescription(),
                                 reading.getParameterValue(),
                                 reading.getUnit()
                         ))
@@ -189,6 +223,9 @@ public class DiagnosticSessionServiceImpl implements DiagnosticSessionService {
                         .map(faultCode -> new FaultCodeResponse(
                                 faultCode.getCode(),
                                 faultCode.getDescription(),
+                                faultCode.getFaultCodeType(),
+                                faultCode.getSourceMode(),
+                                faultCode.getManufacturerSpecific(),
                                 faultCode.getSeverity()
                         ))
                         .toList(),
@@ -222,6 +259,14 @@ public class DiagnosticSessionServiceImpl implements DiagnosticSessionService {
                 spareParts,
                 repairGuides
         );
+    }
+
+    private <T> List<T> safeList(List<T> values) {
+        return values == null ? Collections.emptyList() : values;
+    }
+
+    private String defaultString(String value, String defaultValue) {
+        return value == null || value.isBlank() ? defaultValue : value;
     }
 
     private DiagnosticReportResponse mapReport(DiagnosticReport report) {

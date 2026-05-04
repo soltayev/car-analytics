@@ -31,6 +31,16 @@ public class FaultCode {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
+    private FaultCodeType faultCodeType;
+
+    @Column(nullable = false, length = 20)
+    private String sourceMode;
+
+    @Column(nullable = false)
+    private Boolean manufacturerSpecific;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private SeverityLevel severity;
 
     public Long getId() {
@@ -63,6 +73,30 @@ public class FaultCode {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public FaultCodeType getFaultCodeType() {
+        return faultCodeType;
+    }
+
+    public void setFaultCodeType(FaultCodeType faultCodeType) {
+        this.faultCodeType = faultCodeType;
+    }
+
+    public String getSourceMode() {
+        return sourceMode;
+    }
+
+    public void setSourceMode(String sourceMode) {
+        this.sourceMode = sourceMode;
+    }
+
+    public Boolean getManufacturerSpecific() {
+        return manufacturerSpecific;
+    }
+
+    public void setManufacturerSpecific(Boolean manufacturerSpecific) {
+        this.manufacturerSpecific = manufacturerSpecific;
     }
 
     public SeverityLevel getSeverity() {

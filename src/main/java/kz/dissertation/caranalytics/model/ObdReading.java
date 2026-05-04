@@ -28,6 +28,18 @@ public class ObdReading {
     @Column(length = 20)
     private String pidCode;
 
+    @Column(nullable = false, length = 20)
+    private String sourceMode;
+
+    @Column(nullable = false)
+    private Boolean freezeFrame;
+
+    @Column(nullable = false)
+    private Boolean manufacturerSpecific;
+
+    @Column(length = 255)
+    private String description;
+
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal parameterValue;
 
@@ -64,6 +76,38 @@ public class ObdReading {
 
     public void setPidCode(String pidCode) {
         this.pidCode = pidCode;
+    }
+
+    public String getSourceMode() {
+        return sourceMode;
+    }
+
+    public void setSourceMode(String sourceMode) {
+        this.sourceMode = sourceMode;
+    }
+
+    public Boolean getFreezeFrame() {
+        return freezeFrame;
+    }
+
+    public void setFreezeFrame(Boolean freezeFrame) {
+        this.freezeFrame = freezeFrame;
+    }
+
+    public Boolean getManufacturerSpecific() {
+        return manufacturerSpecific;
+    }
+
+    public void setManufacturerSpecific(Boolean manufacturerSpecific) {
+        this.manufacturerSpecific = manufacturerSpecific;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public BigDecimal getParameterValue() {

@@ -12,6 +12,14 @@ public class ObdReadingRequest {
 
     private String pidCode;
 
+    private String sourceMode;
+
+    private Boolean freezeFrame;
+
+    private Boolean manufacturerSpecific;
+
+    private String description;
+
     @NotNull
     @DecimalMin("0.0")
     private BigDecimal parameterValue;
@@ -33,6 +41,38 @@ public class ObdReadingRequest {
 
     public void setPidCode(String pidCode) {
         this.pidCode = pidCode;
+    }
+
+    public String getSourceMode() {
+        return sourceMode;
+    }
+
+    public void setSourceMode(String sourceMode) {
+        this.sourceMode = sourceMode;
+    }
+
+    public Boolean getFreezeFrame() {
+        return freezeFrame;
+    }
+
+    public void setFreezeFrame(Boolean freezeFrame) {
+        this.freezeFrame = freezeFrame;
+    }
+
+    public Boolean getManufacturerSpecific() {
+        return manufacturerSpecific;
+    }
+
+    public void setManufacturerSpecific(Boolean manufacturerSpecific) {
+        this.manufacturerSpecific = manufacturerSpecific;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public BigDecimal getParameterValue() {

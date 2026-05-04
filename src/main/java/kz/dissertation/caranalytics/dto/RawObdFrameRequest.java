@@ -17,6 +17,8 @@ public class RawObdFrameRequest {
     @NotBlank
     private String decodedLabel;
 
+    private Boolean manufacturerSpecific;
+
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime frameTimestamp;
 
@@ -50,6 +52,14 @@ public class RawObdFrameRequest {
 
     public void setDecodedLabel(String decodedLabel) {
         this.decodedLabel = decodedLabel;
+    }
+
+    public Boolean getManufacturerSpecific() {
+        return manufacturerSpecific;
+    }
+
+    public void setManufacturerSpecific(Boolean manufacturerSpecific) {
+        this.manufacturerSpecific = manufacturerSpecific;
     }
 
     public LocalDateTime getFrameTimestamp() {

@@ -35,6 +35,9 @@ public class RawObdFrame {
     private String decodedLabel;
 
     @Column(nullable = false)
+    private Boolean manufacturerSpecific;
+
+    @Column(nullable = false)
     private LocalDateTime frameTimestamp;
 
     public Long getId() {
@@ -83,6 +86,14 @@ public class RawObdFrame {
 
     public void setDecodedLabel(String decodedLabel) {
         this.decodedLabel = decodedLabel;
+    }
+
+    public Boolean getManufacturerSpecific() {
+        return manufacturerSpecific;
+    }
+
+    public void setManufacturerSpecific(Boolean manufacturerSpecific) {
+        this.manufacturerSpecific = manufacturerSpecific;
     }
 
     public LocalDateTime getFrameTimestamp() {

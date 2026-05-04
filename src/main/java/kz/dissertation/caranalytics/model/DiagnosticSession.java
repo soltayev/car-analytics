@@ -54,6 +54,9 @@ public class DiagnosticSession {
     private List<RawObdFrame> rawFrames = new ArrayList<>();
 
     @OneToMany(mappedBy = "session", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<VehicleInfoItem> vehicleInfoItems = new ArrayList<>();
+
+    @OneToMany(mappedBy = "session", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<ObdReading> readings = new ArrayList<>();
 
     @OneToMany(mappedBy = "session", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
@@ -131,6 +134,10 @@ public class DiagnosticSession {
 
     public List<RawObdFrame> getRawFrames() {
         return rawFrames;
+    }
+
+    public List<VehicleInfoItem> getVehicleInfoItems() {
+        return vehicleInfoItems;
     }
 
     public List<ObdReading> getReadings() {

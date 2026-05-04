@@ -5,6 +5,7 @@ Spring Boot проект для диссертации по интеллекту
 Сейчас в репозитории уже есть:
 
 - REST API для регистрации автомобилей и загрузки диагностических сессий
+- live scan через `ELM327 Wi-Fi` адаптер
 - модель предметной области под `OBD2`, неисправности, сырые фреймы и рекомендации
 - H2 база для локального прототипирования
 - валидация входных данных
@@ -27,6 +28,7 @@ Spring Boot проект для диссертации по интеллекту
 - `Vehicle` - автомобиль
 - `DiagnosticSession` - диагностическая сессия
 - `RawObdFrame` - сырой ответ адаптера по mode/PID
+- `VehicleInfoItem` - данные mode `09`, например `VIN`
 - `ObdReading` - считанные параметры с ЭБУ
 - `FaultCode` - коды неисправностей
 - `Recommendation` - рекомендации системы
@@ -110,6 +112,27 @@ curl -X POST http://localhost:8080/api/diagnostic-sessions/ingest \
   }'
 ```
 
+### Выполнить live scan через Wi-Fi ELM327
+
+```bash
+curl -X POST http://localhost:8080/api/live-scan/wifi \
+  -H "Content-Type: application/json" \
+  -d '{
+    "vehicleId": 1,
+    "host": "192.168.0.10",
+    "port": 35000,
+    "adapterName": "ELM327 WiFi",
+    "protocol": "ISO_15765_4_CAN",
+    "socketTimeoutMs": 4000,
+    "includeStoredFaultCodes": true,
+    "includePendingFaultCodes": true,
+    "includeFreezeFrame": true,
+    "includeVehicleInfo": true,
+    "currentDataPids": ["05", "0C", "0D", "11", "2F", "42"],
+    "freezeFramePids": ["05", "0C", "0D", "11"]
+  }'
+```
+
 ### Получить только диагностический отчет
 
 ```bash
@@ -143,9 +166,9 @@ curl "http://localhost:8080/api/catalog/repair-guides?faultCode=P0118"
 ## Куда можно развивать дальше
 
 1. Подключить реальный модуль связи с `OBD2` адаптером.
-2. Перейти с `H2` на `PostgreSQL`.
-3. Добавить JWT-аутентификацию и роли пользователя.
-4. Подключить настоящий AI/ML модуль интерпретации неисправностей.
-5. Сделать полноценный поиск запчастей по VIN и поставщикам.
-6. Добавить рейтинг и геопоиск СТО.
+2. Добавить Bluetooth-подключение к адаптеру.
+3. Перейти с `H2` на `PostgreSQL`.
+4. Добавить JWT-аутентификацию и роли пользователя.
+5. Подключить настоящий AI/ML модуль интерпретации неисправностей.
+6. Сделать полноценный поиск запчастей по VIN и поставщикам.
 7. Сделать мобильный или web-интерфейс для водителя и диагноста.

@@ -15,6 +15,7 @@ public record DiagnosticSessionResponse(
         LocalDateTime startedAt,
         String overallStatus,
         List<RawObdFrameResponse> rawFrames,
+        List<VehicleInfoItemResponse> vehicleInfoItems,
         List<ObdReadingResponse> readings,
         List<FaultCodeResponse> faultCodes,
         List<RecommendationResponse> recommendations,

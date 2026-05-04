@@ -7,6 +7,7 @@ public record RawObdFrameResponse(
         String pid,
         String rawResponse,
         String decodedLabel,
+        Boolean manufacturerSpecific,
         LocalDateTime frameTimestamp
 ) {
 }

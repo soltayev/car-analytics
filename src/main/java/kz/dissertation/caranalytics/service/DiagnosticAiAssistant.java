@@ -19,7 +19,7 @@ public class DiagnosticAiAssistant {
         }
 
         SeverityLevel highest = faultCodes.stream()
-                .map(FaultCodeRequest::getSeverity)
+                .map(this::severityOrDefault)
                 .max(Comparator.comparingInt(this::weight))
                 .orElse(SeverityLevel.LOW);
 
@@ -46,7 +46,7 @@ public class DiagnosticAiAssistant {
             ));
         } else {
             for (FaultCodeRequest code : faultCodes) {
-                switch (code.getSeverity()) {
+                switch (severityOrDefault(code)) {
                     case LOW -> drafts.add(new AiRecommendationDraft(
                             RecommendationType.MONITORING,
                             "Code " + code.getCode() + " indicates a non-critical issue. Start with inspection and repeat the scan after short-term driving.",
@@ -98,13 +98,13 @@ public class DiagnosticAiAssistant {
         List<String> anomalies = collectReadingAnomalies(readings);
 
         SeverityLevel highestSeverity = safeFaultCodes.stream()
-                .map(FaultCodeRequest::getSeverity)
+                .map(this::severityOrDefault)
                 .max(Comparator.comparingInt(this::weight))
                 .orElse(null);
 
         int healthScore = 100;
         for (FaultCodeRequest code : safeFaultCodes) {
-            healthScore -= switch (code.getSeverity()) {
+            healthScore -= switch (severityOrDefault(code)) {
                 case LOW -> 5;
                 case MEDIUM -> 15;
                 case HIGH -> 30;
@@ -187,7 +187,7 @@ public class DiagnosticAiAssistant {
     private String resolvePrimaryIssue(List<FaultCodeRequest> faultCodes, List<String> anomalies) {
         if (!faultCodes.isEmpty()) {
             FaultCodeRequest code = faultCodes.stream()
-                    .max(Comparator.comparingInt(item -> weight(item.getSeverity())))
+                    .max(Comparator.comparingInt(item -> weight(severityOrDefault(item))))
                     .orElse(faultCodes.get(0));
             return code.getCode() + ": " + code.getDescription();
         }
@@ -255,6 +255,10 @@ public class DiagnosticAiAssistant {
         }
 
         return actions.stream().distinct().limit(5).toList();
+    }
+
+    private SeverityLevel severityOrDefault(FaultCodeRequest request) {
+        return request.getSeverity() == null ? SeverityLevel.MEDIUM : request.getSeverity();
     }
 
     public record AiRecommendationDraft(

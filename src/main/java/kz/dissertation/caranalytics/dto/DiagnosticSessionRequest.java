@@ -30,6 +30,9 @@ public class DiagnosticSessionRequest {
     private List<RawObdFrameRequest> rawFrames;
 
     @Valid
+    private List<VehicleInfoItemRequest> vehicleInfoItems;
+
+    @Valid
     @NotEmpty
     private List<ObdReadingRequest> readings;
 
@@ -82,6 +85,14 @@ public class DiagnosticSessionRequest {
 
     public void setRawFrames(List<RawObdFrameRequest> rawFrames) {
         this.rawFrames = rawFrames;
+    }
+
+    public List<VehicleInfoItemRequest> getVehicleInfoItems() {
+        return vehicleInfoItems;
+    }
+
+    public void setVehicleInfoItems(List<VehicleInfoItemRequest> vehicleInfoItems) {
+        this.vehicleInfoItems = vehicleInfoItems;
     }
 
     public List<ObdReadingRequest> getReadings() {
