@@ -25,7 +25,6 @@ import kz.dissertation.caranalytics.dto.VehicleInfoItemRequest;
 import kz.dissertation.caranalytics.dto.WifiObdScanRequest;
 import kz.dissertation.caranalytics.exception.ObdConnectionException;
 import kz.dissertation.caranalytics.model.FaultCodeType;
-import kz.dissertation.caranalytics.model.SeverityLevel;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -49,14 +48,6 @@ public class Elm327WifiScanner {
             "2F", "%",
             "42", "V"
     );
-    private static final Map<String, String> DTC_DESCRIPTIONS = Map.ofEntries(
-            Map.entry("P0118", "Engine coolant temperature circuit high"),
-            Map.entry("P0300", "Random or multiple cylinder misfire detected"),
-            Map.entry("P0301", "Cylinder 1 misfire detected"),
-            Map.entry("P0302", "Cylinder 2 misfire detected"),
-            Map.entry("P0420", "Catalyst system efficiency below threshold")
-    );
-
     public LiveScanPayload scan(WifiObdScanRequest request) {
         try (Socket socket = new Socket()) {
             socket.connect(new InetSocketAddress(request.getHost(), request.getPort()), timeoutMs(request));
@@ -357,11 +348,11 @@ public class Elm327WifiScanner {
             String code = decodeDtc(firstByte, secondByte);
             FaultCodeRequest request = new FaultCodeRequest();
             request.setCode(code);
-            request.setDescription(DTC_DESCRIPTIONS.getOrDefault(code, "Detected DTC " + code));
+            request.setDescription(null);
             request.setFaultCodeType(faultCodeType);
             request.setSourceMode(mode);
-            request.setManufacturerSpecific(false);
-            request.setSeverity(resolveSeverity(code));
+            request.setManufacturerSpecific(isManufacturerSpecificCode(code));
+            request.setSeverity(null);
             decodedFaultCodes.add(request);
         }
 
@@ -416,15 +407,6 @@ public class Elm327WifiScanner {
         return request;
     }
 
-    private SeverityLevel resolveSeverity(String code) {
-        return switch (code) {
-            case "P0118" -> SeverityLevel.CRITICAL;
-            case "P0300", "P0301", "P0302" -> SeverityLevel.HIGH;
-            case "P0420" -> SeverityLevel.MEDIUM;
-            default -> SeverityLevel.MEDIUM;
-        };
-    }
-
     private String decodeDtc(int firstByte, int secondByte) {
         String family = switch ((firstByte & 0xC0) >> 6) {
             case 0 -> "P";
@@ -442,6 +424,10 @@ public class Elm327WifiScanner {
                 + Integer.toHexString(thirdCharacter).toUpperCase()
                 + Integer.toHexString(fourthCharacter).toUpperCase()
                 + Integer.toHexString(fifthCharacter).toUpperCase();
+    }
+
+    private boolean isManufacturerSpecificCode(String code) {
+        return code != null && code.length() >= 2 && code.charAt(1) == '1';
     }
 
     private String resolveDecodedLabel(String mode, String pid) {

@@ -6,6 +6,8 @@ import java.util.List;
 import kz.dissertation.caranalytics.dto.DiagnosticReportResponse;
 import kz.dissertation.caranalytics.dto.DiagnosticSessionRequest;
 import kz.dissertation.caranalytics.dto.DiagnosticSessionResponse;
+import kz.dissertation.caranalytics.dto.FaultCodeDictionaryResponse;
+import kz.dissertation.caranalytics.dto.FaultCodeRequest;
 import kz.dissertation.caranalytics.dto.FaultCodeResponse;
 import kz.dissertation.caranalytics.dto.ObdReadingResponse;
 import kz.dissertation.caranalytics.dto.RepairGuideResponse;
@@ -38,17 +40,20 @@ public class DiagnosticSessionServiceImpl implements DiagnosticSessionService {
     private final VehicleServiceImpl vehicleService;
     private final DiagnosticAiAssistant diagnosticAiAssistant;
     private final SupportCatalogService supportCatalogService;
+    private final FaultCodeDictionaryService faultCodeDictionaryService;
 
     public DiagnosticSessionServiceImpl(
             DiagnosticSessionRepository diagnosticSessionRepository,
             VehicleServiceImpl vehicleService,
             DiagnosticAiAssistant diagnosticAiAssistant,
-            SupportCatalogService supportCatalogService
+            SupportCatalogService supportCatalogService,
+            FaultCodeDictionaryService faultCodeDictionaryService
     ) {
         this.diagnosticSessionRepository = diagnosticSessionRepository;
         this.vehicleService = vehicleService;
         this.diagnosticAiAssistant = diagnosticAiAssistant;
         this.supportCatalogService = supportCatalogService;
+        this.faultCodeDictionaryService = faultCodeDictionaryService;
     }
 
     @Override
@@ -56,6 +61,7 @@ public class DiagnosticSessionServiceImpl implements DiagnosticSessionService {
     public DiagnosticSessionResponse create(DiagnosticSessionRequest request) {
         Vehicle vehicle = vehicleService.getVehicle(request.getVehicleId());
         LocalDateTime sessionStartedAt = LocalDateTime.now();
+        List<FaultCodeRequest> enrichedFaultCodes = faultCodeDictionaryService.enrichFaultCodes(request.getFaultCodes());
 
         DiagnosticSession session = new DiagnosticSession();
         session.setVehicle(vehicle);
@@ -64,7 +70,7 @@ public class DiagnosticSessionServiceImpl implements DiagnosticSessionService {
         session.setAdapterIdentifier(request.getAdapterIdentifier());
         session.setProtocol(request.getProtocol());
         session.setStartedAt(sessionStartedAt);
-        session.setOverallStatus(diagnosticAiAssistant.buildOverallStatus(request.getFaultCodes()));
+        session.setOverallStatus(diagnosticAiAssistant.buildOverallStatus(enrichedFaultCodes));
 
         safeList(request.getRawFrames()).forEach(frameRequest -> {
             RawObdFrame frame = new RawObdFrame();
@@ -103,7 +109,7 @@ public class DiagnosticSessionServiceImpl implements DiagnosticSessionService {
             session.getReadings().add(reading);
         });
 
-        safeList(request.getFaultCodes()).forEach(faultCodeRequest -> {
+        enrichedFaultCodes.forEach(faultCodeRequest -> {
             FaultCode faultCode = new FaultCode();
             faultCode.setSession(session);
             faultCode.setCode(faultCodeRequest.getCode());
@@ -117,7 +123,7 @@ public class DiagnosticSessionServiceImpl implements DiagnosticSessionService {
             session.getFaultCodes().add(faultCode);
         });
 
-        diagnosticAiAssistant.buildRecommendations(request.getReadings(), request.getFaultCodes())
+        diagnosticAiAssistant.buildRecommendations(request.getReadings(), enrichedFaultCodes)
                 .forEach(draft -> {
                     Recommendation recommendation = new Recommendation();
                     recommendation.setSession(session);
@@ -130,7 +136,7 @@ public class DiagnosticSessionServiceImpl implements DiagnosticSessionService {
 
         DiagnosticAiAssistant.ReportDraft reportDraft = diagnosticAiAssistant.buildReport(
                 request.getReadings(),
-                request.getFaultCodes()
+                enrichedFaultCodes
         );
 
         DiagnosticReport report = new DiagnosticReport();
@@ -220,14 +226,7 @@ public class DiagnosticSessionServiceImpl implements DiagnosticSessionService {
                         ))
                         .toList(),
                 session.getFaultCodes().stream()
-                        .map(faultCode -> new FaultCodeResponse(
-                                faultCode.getCode(),
-                                faultCode.getDescription(),
-                                faultCode.getFaultCodeType(),
-                                faultCode.getSourceMode(),
-                                faultCode.getManufacturerSpecific(),
-                                faultCode.getSeverity()
-                        ))
+                        .map(this::mapFaultCode)
                         .toList(),
                 session.getRecommendations().stream()
                         .map(recommendation -> mapRecommendation(session, recommendation))
@@ -258,6 +257,21 @@ public class DiagnosticSessionServiceImpl implements DiagnosticSessionService {
                 serviceCenters,
                 spareParts,
                 repairGuides
+        );
+    }
+
+    private FaultCodeResponse mapFaultCode(FaultCode faultCode) {
+        FaultCodeDictionaryResponse dictionaryEntry = faultCodeDictionaryService.lookupByCode(faultCode.getCode())
+                .orElse(null);
+
+        return new FaultCodeResponse(
+                faultCode.getCode(),
+                faultCode.getDescription(),
+                faultCode.getFaultCodeType(),
+                faultCode.getSourceMode(),
+                faultCode.getManufacturerSpecific(),
+                faultCode.getSeverity(),
+                dictionaryEntry
         );
     }
 

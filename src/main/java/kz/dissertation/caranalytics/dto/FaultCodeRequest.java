@@ -9,7 +9,6 @@ public class FaultCodeRequest {
     @NotBlank
     private String code;
 
-    @NotBlank
     private String description;
 
     private FaultCodeType faultCodeType;

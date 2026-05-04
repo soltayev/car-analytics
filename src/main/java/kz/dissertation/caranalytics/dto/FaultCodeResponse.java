@@ -9,6 +9,7 @@ public record FaultCodeResponse(
         FaultCodeType faultCodeType,
         String sourceMode,
         Boolean manufacturerSpecific,
-        SeverityLevel severity
+        SeverityLevel severity,
+        FaultCodeDictionaryResponse dictionaryEntry
 ) {
 }

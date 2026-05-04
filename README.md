@@ -31,6 +31,7 @@ Spring Boot проект для диссертации по интеллекту
 - `VehicleInfoItem` - данные mode `09`, например `VIN`
 - `ObdReading` - считанные параметры с ЭБУ
 - `FaultCode` - коды неисправностей
+- `FaultCodeDictionary` - справочник DTC-кодов и их расшифровки
 - `Recommendation` - рекомендации системы
 - `DiagnosticReport` - итоговый отчет по сессии
 - `ServiceCenter` - каталог СТО
@@ -106,11 +107,13 @@ curl -X POST http://localhost:8080/api/diagnostic-sessions/ingest \
       { "parameterName": "rpm", "pidCode": "0C", "parameterValue": 850, "unit": "rpm" }
     ],
     "faultCodes": [
-      { "code": "P0301", "description": "Cylinder 1 misfire detected", "severity": "HIGH" },
-      { "code": "P0118", "description": "Engine coolant temperature circuit high", "severity": "CRITICAL" }
+      { "code": "P0301" },
+      { "code": "P0118" }
     ]
   }'
 ```
+
+Если `description` и `severity` не переданы, backend попробует заполнить их из локального справочника `fault_code_dictionary`.
 
 ### Выполнить live scan через Wi-Fi ELM327
 
@@ -161,6 +164,18 @@ curl "http://localhost:8080/api/catalog/spare-parts?faultCode=P0301"
 
 ```bash
 curl "http://localhost:8080/api/catalog/repair-guides?faultCode=P0118"
+```
+
+### Получить справочник DTC-кодов
+
+```bash
+curl "http://localhost:8080/api/catalog/fault-codes?system=Powertrain&subsystem=Cooling"
+```
+
+### Получить карточку конкретного DTC-кода
+
+```bash
+curl "http://localhost:8080/api/catalog/fault-codes/P0118"
 ```
 
 ## Куда можно развивать дальше
