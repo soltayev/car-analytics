@@ -7,8 +7,11 @@ import kz.dissertation.caranalytics.dto.DiagnosticSessionRequest;
 import kz.dissertation.caranalytics.dto.DiagnosticSessionResponse;
 import kz.dissertation.caranalytics.dto.FaultCodeResponse;
 import kz.dissertation.caranalytics.dto.ObdReadingResponse;
+import kz.dissertation.caranalytics.dto.RepairGuideResponse;
 import kz.dissertation.caranalytics.dto.RawObdFrameResponse;
 import kz.dissertation.caranalytics.dto.RecommendationResponse;
+import kz.dissertation.caranalytics.dto.ServiceCenterResponse;
+import kz.dissertation.caranalytics.dto.SparePartResponse;
 import kz.dissertation.caranalytics.dto.VehicleResponse;
 import kz.dissertation.caranalytics.model.DiagnosticReport;
 import kz.dissertation.caranalytics.exception.ResourceNotFoundException;
@@ -29,15 +32,18 @@ public class DiagnosticSessionServiceImpl implements DiagnosticSessionService {
     private final DiagnosticSessionRepository diagnosticSessionRepository;
     private final VehicleServiceImpl vehicleService;
     private final DiagnosticAiAssistant diagnosticAiAssistant;
+    private final SupportCatalogService supportCatalogService;
 
     public DiagnosticSessionServiceImpl(
             DiagnosticSessionRepository diagnosticSessionRepository,
             VehicleServiceImpl vehicleService,
-            DiagnosticAiAssistant diagnosticAiAssistant
+            DiagnosticAiAssistant diagnosticAiAssistant,
+            SupportCatalogService supportCatalogService
     ) {
         this.diagnosticSessionRepository = diagnosticSessionRepository;
         this.vehicleService = vehicleService;
         this.diagnosticAiAssistant = diagnosticAiAssistant;
+        this.supportCatalogService = supportCatalogService;
     }
 
     @Override
@@ -96,6 +102,7 @@ public class DiagnosticSessionServiceImpl implements DiagnosticSessionService {
                     recommendation.setType(draft.type());
                     recommendation.setMessage(draft.message());
                     recommendation.setActionLabel(draft.actionLabel());
+                    recommendation.setReferenceCode(draft.referenceCode());
                     session.getRecommendations().add(recommendation);
                 });
 
@@ -186,13 +193,34 @@ public class DiagnosticSessionServiceImpl implements DiagnosticSessionService {
                         ))
                         .toList(),
                 session.getRecommendations().stream()
-                        .map(recommendation -> new RecommendationResponse(
-                                recommendation.getType(),
-                                recommendation.getMessage(),
-                                recommendation.getActionLabel()
-                        ))
+                        .map(recommendation -> mapRecommendation(session, recommendation))
                         .toList(),
                 session.getReport() == null ? null : mapReport(session.getReport())
+        );
+    }
+
+    private RecommendationResponse mapRecommendation(DiagnosticSession session, Recommendation recommendation) {
+        List<ServiceCenterResponse> serviceCenters = supportCatalogService.suggestServiceCenters(
+                recommendation.getType(),
+                session,
+                recommendation.getReferenceCode()
+        );
+        List<SparePartResponse> spareParts = supportCatalogService.suggestSpareParts(
+                session.getVehicle(),
+                recommendation.getReferenceCode()
+        );
+        List<RepairGuideResponse> repairGuides = supportCatalogService.suggestRepairGuides(
+                recommendation.getReferenceCode()
+        );
+
+        return new RecommendationResponse(
+                recommendation.getType(),
+                recommendation.getMessage(),
+                recommendation.getActionLabel(),
+                recommendation.getReferenceCode(),
+                serviceCenters,
+                spareParts,
+                repairGuides
         );
     }
 

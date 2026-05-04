@@ -31,6 +31,9 @@ Spring Boot проект для диссертации по интеллекту
 - `FaultCode` - коды неисправностей
 - `Recommendation` - рекомендации системы
 - `DiagnosticReport` - итоговый отчет по сессии
+- `ServiceCenter` - каталог СТО
+- `SparePart` - каталог запчастей
+- `RepairGuide` - ремонтные инструкции
 
 На этом этапе ИИ реализован как rule-based слой-заглушка, чтобы backend уже был рабочим. Позже сюда можно подключить отдельную ML/LLM-модель.
 
@@ -113,11 +116,36 @@ curl -X POST http://localhost:8080/api/diagnostic-sessions/ingest \
 curl http://localhost:8080/api/diagnostic-sessions/1/report
 ```
 
+### Получить каталог СТО
+
+```bash
+curl "http://localhost:8080/api/catalog/service-centers?emergencyOnly=true"
+```
+
+### Получить ближайшие СТО по координатам
+
+```bash
+curl "http://localhost:8080/api/catalog/service-centers?city=Almaty&latitude=43.2565&longitude=76.9284&maxDistanceKm=5"
+```
+
+### Получить каталог запчастей
+
+```bash
+curl "http://localhost:8080/api/catalog/spare-parts?faultCode=P0301"
+```
+
+### Получить ремонтные инструкции
+
+```bash
+curl "http://localhost:8080/api/catalog/repair-guides?faultCode=P0118"
+```
+
 ## Куда можно развивать дальше
 
 1. Подключить реальный модуль связи с `OBD2` адаптером.
 2. Перейти с `H2` на `PostgreSQL`.
 3. Добавить JWT-аутентификацию и роли пользователя.
 4. Подключить настоящий AI/ML модуль интерпретации неисправностей.
-5. Добавить каталог СТО, запчасти и repair guides.
-6. Сделать мобильный или web-интерфейс для водителя и диагноста.
+5. Сделать полноценный поиск запчастей по VIN и поставщикам.
+6. Добавить рейтинг и геопоиск СТО.
+7. Сделать мобильный или web-интерфейс для водителя и диагноста.

@@ -33,6 +33,9 @@ public class Recommendation {
     @Column(length = 255)
     private String actionLabel;
 
+    @Column(length = 50)
+    private String referenceCode;
+
     public Long getId() {
         return id;
     }
@@ -71,5 +74,13 @@ public class Recommendation {
 
     public void setActionLabel(String actionLabel) {
         this.actionLabel = actionLabel;
+    }
+
+    public String getReferenceCode() {
+        return referenceCode;
+    }
+
+    public void setReferenceCode(String referenceCode) {
+        this.referenceCode = referenceCode;
     }
 }

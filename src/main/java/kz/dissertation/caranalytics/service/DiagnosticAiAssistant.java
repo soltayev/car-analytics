@@ -41,7 +41,8 @@ public class DiagnosticAiAssistant {
             drafts.add(new AiRecommendationDraft(
                     RecommendationType.MONITORING,
                     "Clear DTC faults were not detected. Continue monitoring OBD2 telemetry and repeat diagnostics if symptoms persist.",
-                    "Repeat scan later"
+                    "Repeat scan later",
+                    null
             ));
         } else {
             for (FaultCodeRequest code : faultCodes) {
@@ -49,22 +50,26 @@ public class DiagnosticAiAssistant {
                     case LOW -> drafts.add(new AiRecommendationDraft(
                             RecommendationType.MONITORING,
                             "Code " + code.getCode() + " indicates a non-critical issue. Start with inspection and repeat the scan after short-term driving.",
-                            "Inspect and monitor"
+                            "Inspect and monitor",
+                            code.getCode()
                     ));
                     case MEDIUM -> drafts.add(new AiRecommendationDraft(
                             RecommendationType.SELF_REPAIR,
                             "Code " + code.getCode() + " may require basic repair steps: inspect connectors, sensors, wiring, and perform component cleaning or replacement.",
-                            "View repair steps"
+                            "View repair steps",
+                            code.getCode()
                     ));
                     case HIGH -> drafts.add(new AiRecommendationDraft(
                             RecommendationType.PARTS_SEARCH,
                             "Code " + code.getCode() + " suggests replacing a faulty component. Prepare OEM or compatible spare part search by VIN and engine type.",
-                            "Find spare parts"
+                            "Find spare parts",
+                            code.getCode()
                     ));
                     case CRITICAL -> drafts.add(new AiRecommendationDraft(
                             RecommendationType.SERVICE_CENTER,
                             "Code " + code.getCode() + " is critical. Stop intensive use of the vehicle and contact a service center for advanced diagnostics.",
-                            "Go to service center"
+                            "Go to service center",
+                            code.getCode()
                     ));
                 }
             }
@@ -76,7 +81,8 @@ public class DiagnosticAiAssistant {
                 drafts.add(new AiRecommendationDraft(
                         RecommendationType.SERVICE_CENTER,
                         "Engine temperature is above normal range. Check coolant system, radiator fan, and thermostat immediately.",
-                        "Check cooling system"
+                        "Check cooling system",
+                        "TEMP_OVERHEAT"
                 ));
             }
         }
@@ -254,7 +260,8 @@ public class DiagnosticAiAssistant {
     public record AiRecommendationDraft(
             RecommendationType type,
             String message,
-            String actionLabel
+            String actionLabel,
+            String referenceCode
     ) {
     }
 
