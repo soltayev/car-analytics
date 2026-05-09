@@ -59,6 +59,24 @@ mvn spring-boot:run
 - User: `sa`
 - Password: `password`
 
+## Flutter frontend
+
+Кроссплатформенный клиент находится в `frontend/car_analytics_app` и поддерживает `web`, `iOS` и `Android`.
+
+```bash
+cd frontend/car_analytics_app
+flutter pub get
+flutter run -d chrome
+```
+
+Для web-сборки:
+
+```bash
+flutter build web
+```
+
+По умолчанию приложение ходит в backend `http://localhost:8080`. URL можно поменять во вкладке `Settings`; для Android emulator обычно нужен `http://10.0.2.2:8080`.
+
 ## Основные endpoint'ы
 
 ### Зарегистрировать автомобиль
