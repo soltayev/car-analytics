@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:latest
+    container_name: car-analytics
+    environment:
+      POSTGRES_USER: soltayev
+      POSTGRES_PASSWORD: myappl
+      POSTGRES_DB: marketplace
+    ports:
+      - "5432:5432"
+    volumes:
+      - car_analytics_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  car_analytics_postgres_data:

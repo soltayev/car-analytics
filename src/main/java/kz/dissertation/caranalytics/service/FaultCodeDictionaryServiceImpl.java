@@ -113,15 +113,31 @@ public class FaultCodeDictionaryServiceImpl implements FaultCodeDictionaryServic
                 entry.getId(),
                 entry.getCode(),
                 entry.getTitle(),
+                fallback(entry.getTitleRu(), entry.getTitle()),
+                fallback(entry.getTitleEn(), entry.getTitle()),
                 entry.getDescription(),
+                fallback(entry.getDescriptionRu(), entry.getDescription()),
+                fallback(entry.getDescriptionEn(), entry.getDescription()),
                 entry.getSystemName(),
+                fallback(entry.getSystemNameRu(), entry.getSystemName()),
+                fallback(entry.getSystemNameEn(), entry.getSystemName()),
                 entry.getSubsystem(),
+                fallback(entry.getSubsystemRu(), entry.getSubsystem()),
+                fallback(entry.getSubsystemEn(), entry.getSubsystem()),
                 entry.getManufacturerSpecific(),
                 entry.getDefaultSeverity(),
                 entry.getPossibleCauses(),
+                fallback(entry.getPossibleCausesRu(), entry.getPossibleCauses()),
+                fallback(entry.getPossibleCausesEn(), entry.getPossibleCauses()),
                 entry.getRecommendedActions(),
+                fallback(entry.getRecommendedActionsRu(), entry.getRecommendedActions()),
+                fallback(entry.getRecommendedActionsEn(), entry.getRecommendedActions()),
                 entry.getDrivableAllowed()
         );
+    }
+
+    private String fallback(String localized, String original) {
+        return localized == null || localized.isBlank() ? original : localized;
     }
 
     private String normalizeCode(String code) {

@@ -23,14 +23,38 @@ public class FaultCodeDictionary {
     @Column(nullable = false, length = 255)
     private String title;
 
+    @Column(nullable = false, length = 255)
+    private String titleRu;
+
+    @Column(nullable = false, length = 255)
+    private String titleEn;
+
     @Column(nullable = false, length = 2000)
     private String description;
+
+    @Column(nullable = false, length = 2000)
+    private String descriptionRu;
+
+    @Column(nullable = false, length = 2000)
+    private String descriptionEn;
 
     @Column(nullable = false, length = 120)
     private String systemName;
 
     @Column(nullable = false, length = 120)
+    private String systemNameRu;
+
+    @Column(nullable = false, length = 120)
+    private String systemNameEn;
+
+    @Column(nullable = false, length = 120)
     private String subsystem;
+
+    @Column(nullable = false, length = 120)
+    private String subsystemRu;
+
+    @Column(nullable = false, length = 120)
+    private String subsystemEn;
 
     @Column(nullable = false)
     private Boolean manufacturerSpecific;
@@ -43,7 +67,19 @@ public class FaultCodeDictionary {
     private String possibleCauses;
 
     @Column(nullable = false, length = 2000)
+    private String possibleCausesRu;
+
+    @Column(nullable = false, length = 2000)
+    private String possibleCausesEn;
+
+    @Column(nullable = false, length = 2000)
     private String recommendedActions;
+
+    @Column(nullable = false, length = 2000)
+    private String recommendedActionsRu;
+
+    @Column(nullable = false, length = 2000)
+    private String recommendedActionsEn;
 
     @Column(nullable = false)
     private Boolean drivableAllowed;
@@ -72,12 +108,44 @@ public class FaultCodeDictionary {
         this.title = title;
     }
 
+    public String getTitleRu() {
+        return titleRu;
+    }
+
+    public void setTitleRu(String titleRu) {
+        this.titleRu = titleRu;
+    }
+
+    public String getTitleEn() {
+        return titleEn;
+    }
+
+    public void setTitleEn(String titleEn) {
+        this.titleEn = titleEn;
+    }
+
     public String getDescription() {
         return description;
     }
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public String getDescriptionRu() {
+        return descriptionRu;
+    }
+
+    public void setDescriptionRu(String descriptionRu) {
+        this.descriptionRu = descriptionRu;
+    }
+
+    public String getDescriptionEn() {
+        return descriptionEn;
+    }
+
+    public void setDescriptionEn(String descriptionEn) {
+        this.descriptionEn = descriptionEn;
     }
 
     public String getSystemName() {
@@ -88,12 +156,44 @@ public class FaultCodeDictionary {
         this.systemName = systemName;
     }
 
+    public String getSystemNameRu() {
+        return systemNameRu;
+    }
+
+    public void setSystemNameRu(String systemNameRu) {
+        this.systemNameRu = systemNameRu;
+    }
+
+    public String getSystemNameEn() {
+        return systemNameEn;
+    }
+
+    public void setSystemNameEn(String systemNameEn) {
+        this.systemNameEn = systemNameEn;
+    }
+
     public String getSubsystem() {
         return subsystem;
     }
 
     public void setSubsystem(String subsystem) {
         this.subsystem = subsystem;
+    }
+
+    public String getSubsystemRu() {
+        return subsystemRu;
+    }
+
+    public void setSubsystemRu(String subsystemRu) {
+        this.subsystemRu = subsystemRu;
+    }
+
+    public String getSubsystemEn() {
+        return subsystemEn;
+    }
+
+    public void setSubsystemEn(String subsystemEn) {
+        this.subsystemEn = subsystemEn;
     }
 
     public Boolean getManufacturerSpecific() {
@@ -120,12 +220,44 @@ public class FaultCodeDictionary {
         this.possibleCauses = possibleCauses;
     }
 
+    public String getPossibleCausesRu() {
+        return possibleCausesRu;
+    }
+
+    public void setPossibleCausesRu(String possibleCausesRu) {
+        this.possibleCausesRu = possibleCausesRu;
+    }
+
+    public String getPossibleCausesEn() {
+        return possibleCausesEn;
+    }
+
+    public void setPossibleCausesEn(String possibleCausesEn) {
+        this.possibleCausesEn = possibleCausesEn;
+    }
+
     public String getRecommendedActions() {
         return recommendedActions;
     }
 
     public void setRecommendedActions(String recommendedActions) {
         this.recommendedActions = recommendedActions;
+    }
+
+    public String getRecommendedActionsRu() {
+        return recommendedActionsRu;
+    }
+
+    public void setRecommendedActionsRu(String recommendedActionsRu) {
+        this.recommendedActionsRu = recommendedActionsRu;
+    }
+
+    public String getRecommendedActionsEn() {
+        return recommendedActionsEn;
+    }
+
+    public void setRecommendedActionsEn(String recommendedActionsEn) {
+        this.recommendedActionsEn = recommendedActionsEn;
     }
 
     public Boolean getDrivableAllowed() {

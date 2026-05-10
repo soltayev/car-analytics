@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 
 import 'api.dart';
 
@@ -54,6 +56,7 @@ class _HomeScreenState extends State<HomeScreen> {
   late CarAnalyticsApi _api = CarAnalyticsApi(_baseUrlController.text);
   var _selectedIndex = 0;
   var _loading = true;
+  var _language = AppLanguage.ru;
   String? _error;
   List<Vehicle> _vehicles = [];
   List<DiagnosticSession> _sessions = [];
@@ -110,27 +113,41 @@ class _HomeScreenState extends State<HomeScreen> {
         sessions: _sessions,
         loading: _loading,
         error: _error,
+        language: _language,
+        onFindServiceCenters: _openServiceCenters,
         onRefresh: _refresh,
       ),
       VehiclesPage(
         vehicles: _vehicles,
+        language: _language,
         onCreate: _createVehicle,
         onRefresh: _refresh,
       ),
       DiagnosticsPage(
         vehicles: _vehicles,
         sessions: _sessions,
+        language: _language,
+        onFindServiceCenters: _openServiceCenters,
         onCreateDemoSession: _createDemoSession,
         onWifiScan: _wifiScan,
         onRefresh: _refresh,
       ),
-      CatalogPage(api: _api),
-      SettingsPage(controller: _baseUrlController, onApply: _applyBaseUrl),
+      CatalogPage(
+        api: _api,
+        language: _language,
+        serviceCenterOpenRequest: _serviceCenterOpenRequest,
+      ),
+      SettingsPage(
+        controller: _baseUrlController,
+        language: _language,
+        onLanguageChanged: (value) => setState(() => _language = value),
+        onApply: _applyBaseUrl,
+      ),
     ];
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Car Analytics'),
+        title: Text(_language == AppLanguage.ru ? 'Диагностика авто' : 'Car Analytics'),
         actions: [
           IconButton(
             tooltip: 'Refresh',
@@ -153,31 +170,31 @@ class _HomeScreenState extends State<HomeScreen> {
                 onDestinationSelected: (value) =>
                     setState(() => _selectedIndex = value),
                 labelType: NavigationRailLabelType.all,
-                destinations: const [
+                destinations: [
                   NavigationRailDestination(
                     icon: Icon(Icons.space_dashboard_outlined),
                     selectedIcon: Icon(Icons.space_dashboard),
-                    label: Text('Overview'),
+                    label: Text(_language == AppLanguage.ru ? 'Обзор' : 'Overview'),
                   ),
                   NavigationRailDestination(
                     icon: Icon(Icons.directions_car_outlined),
                     selectedIcon: Icon(Icons.directions_car),
-                    label: Text('Vehicles'),
+                    label: Text(_language == AppLanguage.ru ? 'Авто' : 'Vehicles'),
                   ),
                   NavigationRailDestination(
                     icon: Icon(Icons.monitor_heart_outlined),
                     selectedIcon: Icon(Icons.monitor_heart),
-                    label: Text('Diagnostics'),
+                    label: Text(_language == AppLanguage.ru ? 'Диагностика' : 'Diagnostics'),
                   ),
                   NavigationRailDestination(
                     icon: Icon(Icons.inventory_2_outlined),
                     selectedIcon: Icon(Icons.inventory_2),
-                    label: Text('Catalog'),
+                    label: Text(_language == AppLanguage.ru ? 'Справочник' : 'Catalog'),
                   ),
                   NavigationRailDestination(
                     icon: Icon(Icons.tune),
                     selectedIcon: Icon(Icons.tune),
-                    label: Text('Settings'),
+                    label: Text(_language == AppLanguage.ru ? 'Настройки' : 'Settings'),
                   ),
                 ],
               ),
@@ -196,33 +213,45 @@ class _HomeScreenState extends State<HomeScreen> {
             selectedIndex: _selectedIndex,
             onDestinationSelected: (value) =>
                 setState(() => _selectedIndex = value),
-            destinations: const [
+            destinations: [
               NavigationDestination(
                 icon: Icon(Icons.space_dashboard_outlined),
                 selectedIcon: Icon(Icons.space_dashboard),
-                label: 'Overview',
+                label: _language == AppLanguage.ru ? 'Обзор' : 'Overview',
               ),
               NavigationDestination(
                 icon: Icon(Icons.directions_car_outlined),
                 selectedIcon: Icon(Icons.directions_car),
-                label: 'Vehicles',
+                label: _language == AppLanguage.ru ? 'Авто' : 'Vehicles',
               ),
               NavigationDestination(
                 icon: Icon(Icons.monitor_heart_outlined),
                 selectedIcon: Icon(Icons.monitor_heart),
-                label: 'Diagnostics',
+                label: _language == AppLanguage.ru ? 'Диагностика' : 'Diagnostics',
               ),
               NavigationDestination(
                 icon: Icon(Icons.inventory_2_outlined),
                 selectedIcon: Icon(Icons.inventory_2),
-                label: 'Catalog',
+                label: _language == AppLanguage.ru ? 'Справочник' : 'Catalog',
               ),
-              NavigationDestination(icon: Icon(Icons.tune), label: 'Settings'),
+              NavigationDestination(
+                icon: Icon(Icons.tune),
+                label: _language == AppLanguage.ru ? 'Настройки' : 'Settings',
+              ),
             ],
           );
         },
       ),
     );
+  }
+
+  var _serviceCenterOpenRequest = 0;
+
+  void _openServiceCenters() {
+    setState(() {
+      _selectedIndex = 3;
+      _serviceCenterOpenRequest++;
+    });
   }
 
   Future<void> _createVehicle(Map<String, dynamic> data) async {
@@ -261,6 +290,8 @@ class DashboardPage extends StatelessWidget {
     required this.sessions,
     required this.loading,
     required this.error,
+    required this.language,
+    required this.onFindServiceCenters,
     required this.onRefresh,
     super.key,
   });
@@ -269,6 +300,8 @@ class DashboardPage extends StatelessWidget {
   final List<DiagnosticSession> sessions;
   final bool loading;
   final String? error;
+  final AppLanguage language;
+  final VoidCallback onFindServiceCenters;
   final Future<void> Function() onRefresh;
 
   @override
@@ -285,7 +318,7 @@ class DashboardPage extends StatelessWidget {
         if (error != null)
           BannerPanel(
             icon: Icons.cloud_off,
-            title: 'Backend unavailable',
+            title: language == AppLanguage.ru ? 'Backend недоступен' : 'Backend unavailable',
             message: error!,
             action: FilledButton.icon(
               onPressed: onRefresh,
@@ -299,28 +332,33 @@ class DashboardPage extends StatelessWidget {
           runSpacing: 12,
           children: [
             MetricCard(
-              label: 'Vehicles',
+              label: language == AppLanguage.ru ? 'Авто' : 'Vehicles',
               value: vehicles.length.toString(),
               icon: Icons.directions_car,
             ),
             MetricCard(
-              label: 'Sessions',
+              label: language == AppLanguage.ru ? 'Сессии' : 'Sessions',
               value: sessions.length.toString(),
               icon: Icons.assignment,
             ),
             MetricCard(
-              label: 'Risk faults',
+              label: language == AppLanguage.ru ? 'Риски' : 'Risk faults',
               value: criticalFaults.toString(),
               icon: Icons.warning_amber,
             ),
             MetricCard(
-              label: 'Last score',
+              label: language == AppLanguage.ru ? 'Оценка' : 'Last score',
               value: latest?.report?.healthScore.toString() ?? '-',
               icon: Icons.speed,
             ),
           ],
         ),
-        if (latest != null) SessionDetails(session: latest),
+        if (latest != null)
+          SessionDetails(
+            session: latest,
+            language: language,
+            onFindServiceCenters: onFindServiceCenters,
+          ),
       ],
     );
   }
@@ -329,12 +367,14 @@ class DashboardPage extends StatelessWidget {
 class VehiclesPage extends StatelessWidget {
   const VehiclesPage({
     required this.vehicles,
+    required this.language,
     required this.onCreate,
     required this.onRefresh,
     super.key,
   });
 
   final List<Vehicle> vehicles;
+  final AppLanguage language;
   final Future<void> Function(Map<String, dynamic> data) onCreate;
   final Future<void> Function() onRefresh;
 
@@ -343,7 +383,7 @@ class VehiclesPage extends StatelessWidget {
     return AppScroll(
       children: [
         SectionHeader(
-          title: 'Vehicles',
+          title: language == AppLanguage.ru ? 'Автомобили' : 'Vehicles',
           trailing: FilledButton.icon(
             onPressed: () => showDialog<void>(
               context: context,
@@ -354,10 +394,12 @@ class VehiclesPage extends StatelessWidget {
           ),
         ),
         if (vehicles.isEmpty)
-          const EmptyPanel(
+          EmptyPanel(
             icon: Icons.directions_car_outlined,
-            title: 'No vehicles',
-            message: 'Create a vehicle to attach diagnostic sessions.',
+            title: language == AppLanguage.ru ? 'Нет автомобилей' : 'No vehicles',
+            message: language == AppLanguage.ru
+                ? 'Добавьте автомобиль, чтобы привязать диагностические сессии.'
+                : 'Create a vehicle to attach diagnostic sessions.',
           )
         else
           ...vehicles.map(
@@ -381,6 +423,8 @@ class DiagnosticsPage extends StatefulWidget {
   const DiagnosticsPage({
     required this.vehicles,
     required this.sessions,
+    required this.language,
+    required this.onFindServiceCenters,
     required this.onCreateDemoSession,
     required this.onWifiScan,
     required this.onRefresh,
@@ -389,6 +433,8 @@ class DiagnosticsPage extends StatefulWidget {
 
   final List<Vehicle> vehicles;
   final List<DiagnosticSession> sessions;
+  final AppLanguage language;
+  final VoidCallback onFindServiceCenters;
   final Future<void> Function(int vehicleId) onCreateDemoSession;
   final Future<void> Function(int vehicleId, String host, int port) onWifiScan;
   final Future<void> Function() onRefresh;
@@ -416,7 +462,7 @@ class _DiagnosticsPageState extends State<DiagnosticsPage> {
     return AppScroll(
       children: [
         SectionHeader(
-          title: 'Diagnostics',
+          title: widget.language == AppLanguage.ru ? 'Диагностика' : 'Diagnostics',
           trailing: IconButton(
             tooltip: 'Refresh',
             onPressed: widget.onRefresh,
@@ -444,14 +490,18 @@ class _DiagnosticsPageState extends State<DiagnosticsPage> {
                         )
                         .toList(),
                     onChanged: (value) => setState(() => _vehicleId = value),
-                    decoration: const InputDecoration(labelText: 'Vehicle'),
+                    decoration: InputDecoration(
+                      labelText: widget.language == AppLanguage.ru ? 'Авто' : 'Vehicle',
+                    ),
                   ),
                 ),
                 SizedBox(
                   width: 180,
                   child: TextField(
                     controller: _hostController,
-                    decoration: const InputDecoration(labelText: 'ELM327 host'),
+                    decoration: InputDecoration(
+                      labelText: widget.language == AppLanguage.ru ? 'ELM327 адрес' : 'ELM327 host',
+                    ),
                   ),
                 ),
                 SizedBox(
@@ -465,12 +515,12 @@ class _DiagnosticsPageState extends State<DiagnosticsPage> {
                 FilledButton.icon(
                   onPressed: _vehicleId == null || _busy ? null : _runDemo,
                   icon: const Icon(Icons.play_arrow),
-                  label: const Text('Demo ingest'),
+                  label: Text(widget.language == AppLanguage.ru ? 'Демо-скан' : 'Demo ingest'),
                 ),
                 OutlinedButton.icon(
                   onPressed: _vehicleId == null || _busy ? null : _runWifi,
                   icon: const Icon(Icons.wifi),
-                  label: const Text('Wi-Fi scan'),
+                  label: Text(widget.language == AppLanguage.ru ? 'Wi-Fi скан' : 'Wi-Fi scan'),
                 ),
               ],
             ),
@@ -478,13 +528,21 @@ class _DiagnosticsPageState extends State<DiagnosticsPage> {
         ),
         if (_busy) const LinearProgressIndicator(),
         if (widget.sessions.isEmpty)
-          const EmptyPanel(
+          EmptyPanel(
             icon: Icons.monitor_heart_outlined,
-            title: 'No sessions',
-            message: 'Run demo ingest or connect an ELM327 Wi-Fi adapter.',
+            title: widget.language == AppLanguage.ru ? 'Нет сессий' : 'No sessions',
+            message: widget.language == AppLanguage.ru
+                ? 'Запустите демо-скан или подключите ELM327 Wi-Fi адаптер.'
+                : 'Run demo ingest or connect an ELM327 Wi-Fi adapter.',
           )
         else
-          ...widget.sessions.map((session) => SessionDetails(session: session)),
+          ...widget.sessions.map(
+            (session) => SessionDetails(
+              session: session,
+              language: widget.language,
+              onFindServiceCenters: widget.onFindServiceCenters,
+            ),
+          ),
       ],
     );
   }
@@ -526,9 +584,16 @@ class _DiagnosticsPageState extends State<DiagnosticsPage> {
 }
 
 class CatalogPage extends StatefulWidget {
-  const CatalogPage({required this.api, super.key});
+  const CatalogPage({
+    required this.api,
+    required this.language,
+    required this.serviceCenterOpenRequest,
+    super.key,
+  });
 
   final CarAnalyticsApi api;
+  final AppLanguage language;
+  final int serviceCenterOpenRequest;
 
   @override
   State<CatalogPage> createState() => _CatalogPageState();
@@ -536,9 +601,13 @@ class CatalogPage extends StatefulWidget {
 
 class _CatalogPageState extends State<CatalogPage> {
   final _queryController = TextEditingController(text: 'P0118');
+  final _latitudeController = TextEditingController(text: '43.2565');
+  final _longitudeController = TextEditingController(text: '76.9284');
+  final _radiusController = TextEditingController(text: '5');
   var _tab = 0;
   var _loading = false;
   List<CatalogItem> _items = [];
+  List<ServiceCenter> _serviceCenters = [];
 
   @override
   void initState() {
@@ -547,8 +616,24 @@ class _CatalogPageState extends State<CatalogPage> {
   }
 
   @override
+  void didUpdateWidget(covariant CatalogPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.serviceCenterOpenRequest != widget.serviceCenterOpenRequest) {
+      _queryController.text = 'Almaty';
+      _latitudeController.text = '43.2565';
+      _longitudeController.text = '76.9284';
+      _radiusController.text = '5';
+      setState(() => _tab = 2);
+      _load();
+    }
+  }
+
+  @override
   void dispose() {
     _queryController.dispose();
+    _latitudeController.dispose();
+    _longitudeController.dispose();
+    _radiusController.dispose();
     super.dispose();
   }
 
@@ -557,7 +642,7 @@ class _CatalogPageState extends State<CatalogPage> {
     return AppScroll(
       children: [
         SectionHeader(
-          title: 'Catalog',
+          title: widget.language == AppLanguage.ru ? 'Справочник' : 'Catalog',
           trailing: SegmentedButton<int>(
             segments: const [
               ButtonSegment(
@@ -578,67 +663,222 @@ class _CatalogPageState extends State<CatalogPage> {
             ],
             selected: {_tab},
             onSelectionChanged: (value) {
-              setState(() => _tab = value.first);
+              final nextTab = value.first;
+              setState(() {
+                _tab = nextTab;
+                if (_tab == 2 && _queryController.text.startsWith('P')) {
+                  _queryController.text = 'Almaty';
+                }
+                if (_tab != 2 && _queryController.text == 'Almaty') {
+                  _queryController.text = 'P0118';
+                }
+              });
               _load();
             },
           ),
         ),
-        Row(
+        _tab == 2 ? _buildServiceCenterSearch() : _buildCatalogSearch(),
+        if (_loading) const LinearProgressIndicator(),
+        if (_tab == 2) ..._buildServiceCenterResults() else ..._buildCatalogResults(),
+      ],
+    );
+  }
+
+  Widget _buildCatalogSearch() {
+    return Row(
+      children: [
+        Expanded(
+          child: TextField(
+            controller: _queryController,
+            decoration: const InputDecoration(
+              labelText: 'Fault code',
+              prefixIcon: Icon(Icons.search),
+            ),
+            onSubmitted: (_) => _load(),
+          ),
+        ),
+        const SizedBox(width: 12),
+        FilledButton.icon(
+          onPressed: _load,
+          icon: const Icon(Icons.search),
+          label: Text(widget.language == AppLanguage.ru ? 'Найти' : 'Search'),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildServiceCenterSearch() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-            Expanded(
+            SizedBox(
+              width: 180,
               child: TextField(
                 controller: _queryController,
                 decoration: InputDecoration(
-                  labelText: _tab == 2 ? 'City' : 'Fault code',
-                  prefixIcon: const Icon(Icons.search),
+                  labelText: widget.language == AppLanguage.ru ? 'Город' : 'City',
+                  prefixIcon: const Icon(Icons.location_city),
                 ),
                 onSubmitted: (_) => _load(),
               ),
             ),
-            const SizedBox(width: 12),
+            SizedBox(
+              width: 150,
+              child: TextField(
+                controller: _latitudeController,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                  signed: true,
+                ),
+                decoration: const InputDecoration(labelText: 'Latitude'),
+              ),
+            ),
+            SizedBox(
+              width: 150,
+              child: TextField(
+                controller: _longitudeController,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                  signed: true,
+                ),
+                decoration: const InputDecoration(labelText: 'Longitude'),
+              ),
+            ),
+            SizedBox(
+              width: 120,
+              child: TextField(
+                controller: _radiusController,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                decoration: InputDecoration(
+                  labelText: widget.language == AppLanguage.ru ? 'Радиус, км' : 'Radius km',
+                ),
+              ),
+            ),
             FilledButton.icon(
               onPressed: _load,
-              icon: const Icon(Icons.search),
-              label: const Text('Search'),
+              icon: const Icon(Icons.map),
+              label: Text(widget.language == AppLanguage.ru ? 'Найти' : 'Find'),
+            ),
+            OutlinedButton.icon(
+              onPressed: () {
+                _queryController.text = 'Almaty';
+                _latitudeController.text = '43.2565';
+                _longitudeController.text = '76.9284';
+                _radiusController.text = '5';
+                _load();
+              },
+              icon: const Icon(Icons.my_location),
+              label: const Text('Almaty'),
             ),
           ],
         ),
-        if (_loading) const LinearProgressIndicator(),
-        if (_items.isEmpty && !_loading)
-          const EmptyPanel(
-            icon: Icons.inventory_2_outlined,
-            title: 'No catalog results',
-            message: 'Try another code or city.',
-          )
-        else
-          ..._items.map(
-            (item) => Card(
-              child: ListTile(
-                title: Text(item.title),
-                subtitle: Text(item.subtitle),
-                trailing: item.badge.isEmpty
-                    ? null
-                    : Chip(label: Text(item.badge)),
-              ),
+      ),
+    );
+  }
+
+  List<Widget> _buildCatalogResults() {
+    if (_items.isEmpty && !_loading) {
+      return [
+        EmptyPanel(
+          icon: Icons.inventory_2_outlined,
+          title: widget.language == AppLanguage.ru ? 'Ничего не найдено' : 'No catalog results',
+          message: widget.language == AppLanguage.ru ? 'Попробуйте другой код.' : 'Try another code.',
+        ),
+      ];
+    }
+    return _items
+        .map(
+          (item) => Card(
+            child: ListTile(
+              title: Text(item.localizedTitle(widget.language)),
+              subtitle: Text(item.localizedSubtitle(widget.language)),
+              trailing: item.badge.isEmpty ? null : Chip(label: Text(item.badge)),
             ),
           ),
-      ],
-    );
+        )
+        .toList();
+  }
+
+  List<Widget> _buildServiceCenterResults() {
+    if (_serviceCenters.isEmpty && !_loading) {
+      return [
+        EmptyPanel(
+          icon: Icons.local_hospital_outlined,
+          title: widget.language == AppLanguage.ru ? 'СТО не найдены' : 'No service centers',
+          message: widget.language == AppLanguage.ru
+              ? 'Попробуйте другой город, координаты или радиус.'
+              : 'Try another city, coordinates, or radius.',
+        ),
+      ];
+    }
+    return [
+      if (_serviceCenters.isNotEmpty)
+        ServiceCenterMap(
+          centers: _serviceCenters,
+          originLatitude: double.tryParse(_latitudeController.text),
+          originLongitude: double.tryParse(_longitudeController.text),
+        ),
+      ..._serviceCenters.map(
+        (center) => Card(
+          child: ListTile(
+            leading: Icon(
+              center.emergencySupport
+                  ? Icons.local_hospital
+                  : Icons.car_repair,
+            ),
+            title: Text(center.name),
+            subtitle: Text(
+              '${center.address}\n${center.phone} | ${center.specialization}',
+            ),
+            trailing: Wrap(
+              spacing: 6,
+              children: [
+                Chip(label: Text(center.distanceLabel)),
+                Chip(label: Text(center.badge)),
+              ],
+            ),
+          ),
+        ),
+      ),
+    ];
   }
 
   Future<void> _load() async {
     setState(() => _loading = true);
     try {
       final query = _queryController.text.trim();
+      if (_tab == 2) {
+        final centers = await widget.api.serviceCenters(
+          city: query.isEmpty ? 'Almaty' : query,
+          latitude: double.tryParse(_latitudeController.text),
+          longitude: double.tryParse(_longitudeController.text),
+          maxDistanceKm: double.tryParse(_radiusController.text),
+        );
+        if (mounted) {
+          setState(() {
+            _serviceCenters = centers;
+            _items = [];
+          });
+        }
+        return;
+      }
+
       final items = switch (_tab) {
         0 => await widget.api.faultCodes(code: query),
-        1 => await widget.api.spareParts(faultCode: query),
-        _ => await widget.api.serviceCenters(
-          city: query.isEmpty ? 'Almaty' : query,
-        ),
+        _ => await widget.api.spareParts(faultCode: query),
       };
       if (mounted) {
-        setState(() => _items = items);
+        setState(() {
+          _items = items;
+          _serviceCenters = [];
+        });
       }
     } catch (error) {
       if (mounted) {
@@ -654,41 +894,149 @@ class _CatalogPageState extends State<CatalogPage> {
   }
 }
 
+class ServiceCenterMap extends StatelessWidget {
+  const ServiceCenterMap({
+    required this.centers,
+    required this.originLatitude,
+    required this.originLongitude,
+    super.key,
+  });
+
+  final List<ServiceCenter> centers;
+  final double? originLatitude;
+  final double? originLongitude;
+
+  @override
+  Widget build(BuildContext context) {
+    final origin = originLatitude == null || originLongitude == null
+        ? null
+        : LatLng(originLatitude!, originLongitude!);
+    final mapCenter = origin ??
+        LatLng(centers.first.latitude, centers.first.longitude);
+    final markers = [
+      if (origin != null)
+        Marker(
+          point: origin,
+          width: 48,
+          height: 48,
+          child: const Icon(
+            Icons.my_location,
+            color: Color(0xff006d67),
+            size: 34,
+          ),
+        ),
+      ...centers.map(
+        (center) => Marker(
+          point: LatLng(center.latitude, center.longitude),
+          width: 48,
+          height: 48,
+          child: Icon(
+            center.emergencySupport
+                ? Icons.local_hospital
+                : Icons.car_repair,
+            color: center.emergencySupport
+                ? Theme.of(context).colorScheme.error
+                : Theme.of(context).colorScheme.tertiary,
+            size: 34,
+          ),
+        ),
+      ),
+    ];
+
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: SizedBox(
+        height: 320,
+        child: Stack(
+          children: [
+            FlutterMap(
+              options: MapOptions(
+                initialCenter: mapCenter,
+                initialZoom: 13,
+                minZoom: 3,
+                maxZoom: 18,
+              ),
+              children: [
+                TileLayer(
+                  urlTemplate:
+                      'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  userAgentPackageName: 'com.example.car_analytics_app',
+                ),
+                MarkerLayer(markers: markers),
+              ],
+            ),
+            Positioned(
+              left: 8,
+              bottom: 8,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.86),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                  child: Text(
+                    '© OpenStreetMap contributors',
+                    style: TextStyle(fontSize: 11),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class SettingsPage extends StatelessWidget {
   const SettingsPage({
     required this.controller,
+    required this.language,
+    required this.onLanguageChanged,
     required this.onApply,
     super.key,
   });
 
   final TextEditingController controller;
+  final AppLanguage language;
+  final ValueChanged<AppLanguage> onLanguageChanged;
   final VoidCallback onApply;
 
   @override
   Widget build(BuildContext context) {
     return AppScroll(
       children: [
-        const SectionHeader(title: 'Settings'),
+        SectionHeader(title: language == AppLanguage.ru ? 'Настройки' : 'Settings'),
         Card(
           child: Padding(
             padding: const EdgeInsets.all(16),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: TextField(
-                    controller: controller,
-                    decoration: const InputDecoration(
-                      labelText: 'Backend URL',
-                      helperText:
-                          'Android emulator usually uses http://10.0.2.2:8080',
-                    ),
+                TextField(
+                  controller: controller,
+                  decoration: InputDecoration(
+                    labelText: 'Backend URL',
+                    helperText: language == AppLanguage.ru
+                        ? 'Для Android emulator обычно нужен http://10.0.2.2:8080'
+                        : 'Android emulator usually uses http://10.0.2.2:8080',
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(height: 12),
+                SegmentedButton<AppLanguage>(
+                  segments: const [
+                    ButtonSegment(value: AppLanguage.ru, label: Text('Русский')),
+                    ButtonSegment(value: AppLanguage.en, label: Text('English')),
+                  ],
+                  selected: {language},
+                  onSelectionChanged: (value) => onLanguageChanged(value.first),
+                ),
+                const SizedBox(height: 12),
                 FilledButton.icon(
                   onPressed: onApply,
                   icon: const Icon(Icons.check),
-                  label: const Text('Apply'),
+                  label: Text(language == AppLanguage.ru ? 'Применить' : 'Apply'),
                 ),
               ],
             ),
@@ -792,9 +1140,16 @@ class _VehicleDialogState extends State<VehicleDialog> {
 }
 
 class SessionDetails extends StatelessWidget {
-  const SessionDetails({required this.session, super.key});
+  const SessionDetails({
+    required this.session,
+    required this.language,
+    required this.onFindServiceCenters,
+    super.key,
+  });
 
   final DiagnosticSession session;
+  final AppLanguage language;
+  final VoidCallback onFindServiceCenters;
 
   @override
   Widget build(BuildContext context) {
@@ -820,14 +1175,19 @@ class SessionDetails extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-            if (report != null) ReportPanel(report: report),
+            if (report != null)
+              ReportPanel(
+                report: report,
+                language: language,
+                onFindServiceCenters: onFindServiceCenters,
+              ),
             const SizedBox(height: 12),
             Wrap(
               spacing: 12,
               runSpacing: 12,
               children: [
                 InfoBlock(
-                  title: 'Readings',
+                  title: language == AppLanguage.ru ? 'Параметры' : 'Readings',
                   children: session.readings
                       .map(
                         (reading) =>
@@ -836,18 +1196,18 @@ class SessionDetails extends StatelessWidget {
                       .toList(),
                 ),
                 InfoBlock(
-                  title: 'Faults',
+                  title: language == AppLanguage.ru ? 'Ошибки' : 'Faults',
                   children: session.faultCodes
                       .map(
                         (fault) =>
-                            '${fault.code} ${fault.severity} ${fault.description}',
+                            '${fault.code} ${fault.severity} ${fault.localizedDescription(language)}',
                       )
                       .toList(),
                 ),
                 InfoBlock(
-                  title: 'Recommendations',
+                  title: language == AppLanguage.ru ? 'Рекомендации' : 'Recommendations',
                   children: session.recommendations
-                      .map((item) => '${item.actionLabel}: ${item.message}')
+                      .map((item) => '${item.localizedActionLabel(language)}: ${item.localizedMessage(language)}')
                       .toList(),
                 ),
               ],
@@ -860,9 +1220,16 @@ class SessionDetails extends StatelessWidget {
 }
 
 class ReportPanel extends StatelessWidget {
-  const ReportPanel({required this.report, super.key});
+  const ReportPanel({
+    required this.report,
+    required this.language,
+    required this.onFindServiceCenters,
+    super.key,
+  });
 
   final DiagnosticReport report;
+  final AppLanguage language;
+  final VoidCallback onFindServiceCenters;
 
   @override
   Widget build(BuildContext context) {
@@ -892,15 +1259,38 @@ class ReportPanel extends StatelessWidget {
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               Chip(label: Text(report.urgency)),
-              Chip(label: Text(report.drivable ? 'Drivable' : 'Do not drive')),
+              Chip(label: Text(report.drivable
+                  ? (language == AppLanguage.ru ? 'Можно ехать' : 'Drivable')
+                  : (language == AppLanguage.ru ? 'Не ехать' : 'Do not drive'))),
             ],
           ),
           const SizedBox(height: 8),
           Text(report.primaryIssue),
-          if (report.summary.isNotEmpty) Text(report.summary),
-          if (report.nextActions.isNotEmpty) ...[
+          if (report.localizedSummary(language).isNotEmpty)
+            Text(report.localizedSummary(language)),
+          if (report.localizedRiskForecast(language).isNotEmpty) ...[
             const SizedBox(height: 8),
-            ...report.nextActions.map((action) => Text('- $action')),
+            Text(
+              language == AppLanguage.ru ? 'Прогноз риска' : 'Risk forecast',
+              style: Theme.of(context).textTheme.labelLarge,
+            ),
+            Text(report.localizedRiskForecast(language)),
+          ],
+          if (report.localizedNextActions(language).isNotEmpty) ...[
+            const SizedBox(height: 8),
+            ...report.localizedNextActions(language).map((action) => Text('- $action')),
+          ],
+          if (report.urgency != 'MONITOR') ...[
+            const SizedBox(height: 12),
+            FilledButton.icon(
+              onPressed: onFindServiceCenters,
+              icon: const Icon(Icons.local_hospital),
+              label: Text(
+                language == AppLanguage.ru
+                    ? 'Найти ближайшее СТО'
+                    : 'Find nearby service centers',
+              ),
+            ),
           ],
         ],
       ),

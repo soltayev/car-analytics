@@ -12,7 +12,14 @@ public record DiagnosticReportResponse(
         Boolean towRecommended,
         String primaryIssue,
         String summary,
+        String summaryRu,
+        String summaryEn,
+        String riskForecast,
+        String riskForecastRu,
+        String riskForecastEn,
         LocalDateTime generatedAt,
-        List<String> nextActions
+        List<String> nextActions,
+        List<String> nextActionsRu,
+        List<String> nextActionsEn
 ) {
 }

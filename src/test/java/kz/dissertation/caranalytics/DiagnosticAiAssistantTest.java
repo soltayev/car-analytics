@@ -31,6 +31,7 @@ class DiagnosticAiAssistantTest {
         assertFalse(report.drivable());
         assertTrue(report.towRecommended());
         assertTrue(report.healthScore() < 60);
+        assertTrue(report.riskForecast().contains("overheating"));
     }
 
     @Test
@@ -46,6 +47,7 @@ class DiagnosticAiAssistantTest {
         assertTrue(report.drivable());
         assertFalse(report.towRecommended());
         assertEquals("No major diagnostic issue detected", report.primaryIssue());
+        assertTrue(report.riskForecast().contains("baseline"));
     }
 
     private static ObdReadingRequest reading(String name, String pid, String value, String unit) {

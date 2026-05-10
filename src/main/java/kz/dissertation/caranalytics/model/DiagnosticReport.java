@@ -48,6 +48,9 @@ public class DiagnosticReport {
     @Column(nullable = false, length = 2000)
     private String summary;
 
+    @Column(nullable = false, length = 2000)
+    private String riskForecast;
+
     @Column(nullable = false)
     private LocalDateTime generatedAt;
 
@@ -118,6 +121,14 @@ public class DiagnosticReport {
 
     public void setSummary(String summary) {
         this.summary = summary;
+    }
+
+    public String getRiskForecast() {
+        return riskForecast;
+    }
+
+    public void setRiskForecast(String riskForecast) {
+        this.riskForecast = riskForecast;
     }
 
     public LocalDateTime getGeneratedAt() {

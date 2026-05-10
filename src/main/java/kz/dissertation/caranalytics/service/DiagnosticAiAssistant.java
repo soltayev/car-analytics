@@ -123,6 +123,7 @@ public class DiagnosticAiAssistant {
 
         String primaryIssue = resolvePrimaryIssue(safeFaultCodes, anomalies);
         String summary = resolveSummary(urgency, safeFaultCodes, anomalies);
+        String riskForecast = resolveRiskForecast(urgency, safeFaultCodes, anomalies);
         List<String> nextActions = resolveNextActions(urgency, safeFaultCodes, anomalies);
 
         return new ReportDraft(
@@ -132,6 +133,7 @@ public class DiagnosticAiAssistant {
                 towRecommended,
                 primaryIssue,
                 summary,
+                riskForecast,
                 nextActions
         );
     }
@@ -257,6 +259,55 @@ public class DiagnosticAiAssistant {
         return actions.stream().distinct().limit(5).toList();
     }
 
+    private String resolveRiskForecast(
+            ReportUrgency urgency,
+            List<FaultCodeRequest> faultCodes,
+            List<String> anomalies
+    ) {
+        if (faultCodes.isEmpty() && anomalies.isEmpty()) {
+            return "No active fault trend is visible yet. Use this scan as a baseline and repeat diagnostics if symptoms appear.";
+        }
+
+        if (anomalies.contains("engine overheating")) {
+            return "Cooling anomalies can progress from a small sensor or coolant issue to overheating, cylinder-head damage, and a roadside breakdown if ignored.";
+        }
+        if (anomalies.contains("critically low oil pressure")) {
+            return "Low oil pressure is a fast-progressing risk: continued operation can damage bearings, turbocharger components, and the engine block.";
+        }
+        if (anomalies.contains("low battery voltage")) {
+            return "Low voltage can start as intermittent warning lights, then cause no-start conditions, unstable ECU communication, and cascading module faults.";
+        }
+
+        SeverityLevel highest = faultCodes.stream()
+                .map(this::severityOrDefault)
+                .max(Comparator.comparingInt(this::weight))
+                .orElse(SeverityLevel.LOW);
+
+        String codes = faultCodes.stream()
+                .map(FaultCodeRequest::getCode)
+                .distinct()
+                .limit(3)
+                .reduce((left, right) -> left + ", " + right)
+                .orElse("detected codes");
+
+        if (highest == SeverityLevel.LOW) {
+            return "Current codes (" + codes + ") look minor, but repeated occurrence can hide wiring, connector, or sensor degradation. Track whether they return after clearing and short driving.";
+        }
+        if (highest == SeverityLevel.MEDIUM) {
+            return "Current codes (" + codes + ") are not an immediate stop signal, but ignoring them can increase fuel consumption, damage related sensors, or turn into a hard fault under load.";
+        }
+        if (highest == SeverityLevel.HIGH) {
+            return "Current codes (" + codes + ") can progress to misfires, overheating, charging failure, or drivetrain protection mode. Limit driving until the root cause is confirmed.";
+        }
+
+        return switch (urgency) {
+            case IMMEDIATE_STOP -> "The detected pattern can quickly become mechanical or safety-critical damage. Do not continue normal driving until inspection is complete.";
+            case URGENT_SERVICE -> "The detected pattern is likely to worsen under heat, load, or long-distance driving. Service should happen before regular use continues.";
+            case SCHEDULE_SERVICE -> "The fault is manageable now, but repeated cycles can increase wear and create secondary faults in connected systems.";
+            case MONITOR -> "No immediate damage chain is visible, but repeating the scan helps catch intermittent faults before they become permanent.";
+        };
+    }
+
     private SeverityLevel severityOrDefault(FaultCodeRequest request) {
         return request.getSeverity() == null ? SeverityLevel.MEDIUM : request.getSeverity();
     }
@@ -276,6 +327,7 @@ public class DiagnosticAiAssistant {
             Boolean towRecommended,
             String primaryIssue,
             String summary,
+            String riskForecast,
             List<String> nextActions
     ) {
     }

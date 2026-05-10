@@ -85,7 +85,14 @@ class DiagnosticReport {
     required this.towRecommended,
     required this.primaryIssue,
     required this.summary,
+    required this.summaryRu,
+    required this.summaryEn,
+    required this.riskForecast,
+    required this.riskForecastRu,
+    required this.riskForecastEn,
     required this.nextActions,
+    required this.nextActionsRu,
+    required this.nextActionsEn,
   });
 
   final int healthScore;
@@ -94,7 +101,23 @@ class DiagnosticReport {
   final bool towRecommended;
   final String primaryIssue;
   final String summary;
+  final String summaryRu;
+  final String summaryEn;
+  final String riskForecast;
+  final String riskForecastRu;
+  final String riskForecastEn;
   final List<String> nextActions;
+  final List<String> nextActionsRu;
+  final List<String> nextActionsEn;
+
+  String localizedSummary(AppLanguage language) =>
+      language == AppLanguage.ru ? summaryRu : summaryEn;
+
+  String localizedRiskForecast(AppLanguage language) =>
+      language == AppLanguage.ru ? riskForecastRu : riskForecastEn;
+
+  List<String> localizedNextActions(AppLanguage language) =>
+      language == AppLanguage.ru ? nextActionsRu : nextActionsEn;
 
   factory DiagnosticReport.fromJson(Map<String, dynamic> json) =>
       DiagnosticReport(
@@ -104,9 +127,20 @@ class DiagnosticReport {
         towRecommended: json['towRecommended'] as bool? ?? false,
         primaryIssue: json['primaryIssue'] as String? ?? '',
         summary: json['summary'] as String? ?? '',
-        nextActions: (json['nextActions'] as List<dynamic>? ?? [])
-            .map((item) => item.toString())
-            .toList(),
+        summaryRu: _string(json['summaryRu'], _string(json['summary'])),
+        summaryEn: _string(json['summaryEn'], _string(json['summary'])),
+        riskForecast: json['riskForecast'] as String? ?? '',
+        riskForecastRu: _string(
+          json['riskForecastRu'],
+          _string(json['riskForecast']),
+        ),
+        riskForecastEn: _string(
+          json['riskForecastEn'],
+          _string(json['riskForecast']),
+        ),
+        nextActions: _stringList(json['nextActions']),
+        nextActionsRu: _stringList(json['nextActionsRu'], json['nextActions']),
+        nextActionsEn: _stringList(json['nextActionsEn'], json['nextActions']),
       );
 }
 
@@ -135,16 +169,31 @@ class FaultCode {
   FaultCode({
     required this.code,
     required this.description,
+    required this.descriptionRu,
+    required this.descriptionEn,
     required this.severity,
   });
 
   final String code;
   final String description;
+  final String descriptionRu;
+  final String descriptionEn;
   final String severity;
+
+  String localizedDescription(AppLanguage language) =>
+      language == AppLanguage.ru ? descriptionRu : descriptionEn;
 
   factory FaultCode.fromJson(Map<String, dynamic> json) => FaultCode(
     code: json['code'] as String? ?? '',
     description: json['description'] as String? ?? '',
+    descriptionRu: _string(
+      (json['dictionaryEntry'] as Map<String, dynamic>?)?['titleRu'],
+      _string(json['description']),
+    ),
+    descriptionEn: _string(
+      (json['dictionaryEntry'] as Map<String, dynamic>?)?['titleEn'],
+      _string(json['description']),
+    ),
     severity: json['severity'] as String? ?? '',
   );
 }
@@ -153,30 +202,108 @@ class Recommendation {
   Recommendation({
     required this.type,
     required this.message,
+    required this.messageRu,
+    required this.messageEn,
     required this.actionLabel,
+    required this.actionLabelRu,
+    required this.actionLabelEn,
   });
 
   final String type;
   final String message;
+  final String messageRu;
+  final String messageEn;
   final String actionLabel;
+  final String actionLabelRu;
+  final String actionLabelEn;
+
+  String localizedMessage(AppLanguage language) =>
+      language == AppLanguage.ru ? messageRu : messageEn;
+
+  String localizedActionLabel(AppLanguage language) =>
+      language == AppLanguage.ru ? actionLabelRu : actionLabelEn;
 
   factory Recommendation.fromJson(Map<String, dynamic> json) => Recommendation(
     type: json['type'] as String? ?? '',
     message: json['message'] as String? ?? '',
+    messageRu: _string(json['messageRu'], _string(json['message'])),
+    messageEn: _string(json['messageEn'], _string(json['message'])),
     actionLabel: json['actionLabel'] as String? ?? '',
+    actionLabelRu: _string(json['actionLabelRu'], _string(json['actionLabel'])),
+    actionLabelEn: _string(json['actionLabelEn'], _string(json['actionLabel'])),
   );
 }
+
+enum AppLanguage { ru, en }
 
 class CatalogItem {
   CatalogItem({
     required this.title,
+    required this.titleRu,
+    required this.titleEn,
     required this.subtitle,
+    required this.subtitleRu,
+    required this.subtitleEn,
     required this.badge,
   });
 
   final String title;
+  final String titleRu;
+  final String titleEn;
   final String subtitle;
+  final String subtitleRu;
+  final String subtitleEn;
   final String badge;
+
+  String localizedTitle(AppLanguage language) =>
+      language == AppLanguage.ru ? titleRu : titleEn;
+
+  String localizedSubtitle(AppLanguage language) =>
+      language == AppLanguage.ru ? subtitleRu : subtitleEn;
+}
+
+class ServiceCenter {
+  ServiceCenter({
+    required this.name,
+    required this.city,
+    required this.address,
+    required this.phone,
+    required this.specialization,
+    required this.emergencySupport,
+    required this.rating,
+    required this.latitude,
+    required this.longitude,
+    this.distanceKm,
+  });
+
+  final String name;
+  final String city;
+  final String address;
+  final String phone;
+  final String specialization;
+  final bool emergencySupport;
+  final num rating;
+  final double latitude;
+  final double longitude;
+  final double? distanceKm;
+
+  factory ServiceCenter.fromJson(Map<String, dynamic> json) => ServiceCenter(
+    name: json['name'] as String? ?? '',
+    city: json['city'] as String? ?? '',
+    address: json['address'] as String? ?? '',
+    phone: json['phone'] as String? ?? '',
+    specialization: json['specialization'] as String? ?? '',
+    emergencySupport: json['emergencySupport'] as bool? ?? false,
+    rating: json['rating'] as num? ?? 0,
+    latitude: (json['latitude'] as num? ?? 0).toDouble(),
+    longitude: (json['longitude'] as num? ?? 0).toDouble(),
+    distanceKm: (json['distanceKm'] as num?)?.toDouble(),
+  );
+
+  String get badge => emergencySupport ? '24/7' : rating.toString();
+
+  String get distanceLabel =>
+      distanceKm == null ? city : '${distanceKm!.toStringAsFixed(2)} km';
 }
 
 class CarAnalyticsApi {
@@ -280,18 +407,19 @@ class CarAnalyticsApi {
     return DiagnosticSession.fromJson(body as Map<String, dynamic>);
   }
 
-  Future<List<CatalogItem>> serviceCenters({String city = 'Almaty'}) async {
-    final body = await _get('/api/catalog/service-centers', {'city': city});
-    return (body as List<dynamic>).map((item) {
-      final json = item as Map<String, dynamic>;
-      return CatalogItem(
-        title: json['name'] as String? ?? '',
-        subtitle: '${json['address'] ?? ''}\n${json['phone'] ?? ''}',
-        badge: json['emergencySupport'] == true
-            ? '24/7'
-            : '${json['rating'] ?? ''}',
-      );
-    }).toList();
+  Future<List<ServiceCenter>> serviceCenters({
+    String city = 'Almaty',
+    double? latitude,
+    double? longitude,
+    double? maxDistanceKm,
+  }) async {
+    final body = await _get('/api/catalog/service-centers', {
+      'city': city,
+      'latitude': latitude?.toString(),
+      'longitude': longitude?.toString(),
+      'maxDistanceKm': maxDistanceKm?.toString(),
+    });
+    return _list(body, ServiceCenter.fromJson);
   }
 
   Future<List<CatalogItem>> spareParts({String faultCode = ''}) async {
@@ -302,7 +430,11 @@ class CarAnalyticsApi {
       final json = item as Map<String, dynamic>;
       return CatalogItem(
         title: json['partName'] as String? ?? '',
+        titleRu: json['partName'] as String? ?? '',
+        titleEn: json['partName'] as String? ?? '',
         subtitle: '${json['manufacturer'] ?? ''} ${json['partNumber'] ?? ''}',
+        subtitleRu: '${json['manufacturer'] ?? ''} ${json['partNumber'] ?? ''}',
+        subtitleEn: '${json['manufacturer'] ?? ''} ${json['partNumber'] ?? ''}',
         badge: '${json['price'] ?? ''} ${json['currency'] ?? ''}',
       );
     }).toList();
@@ -314,7 +446,11 @@ class CarAnalyticsApi {
       final json = item as Map<String, dynamic>;
       return CatalogItem(
         title: json['code'] as String? ?? '',
+        titleRu: json['code'] as String? ?? '',
+        titleEn: json['code'] as String? ?? '',
         subtitle: json['description'] as String? ?? '',
+        subtitleRu: _string(json['titleRu'], _string(json['description'])),
+        subtitleEn: _string(json['titleEn'], _string(json['description'])),
         badge: json['severity'] as String? ?? '',
       );
     }).toList();
@@ -362,4 +498,13 @@ List<T> _list<T>(dynamic json, T Function(Map<String, dynamic>) mapper) {
   return (json as List<dynamic>? ?? [])
       .map((item) => mapper(item as Map<String, dynamic>))
       .toList();
+}
+
+String _string(dynamic value, [String fallback = '']) {
+  return value == null ? fallback : value.toString();
+}
+
+List<String> _stringList(dynamic value, [dynamic fallback]) {
+  final source = value is List<dynamic> ? value : fallback;
+  return (source as List<dynamic>? ?? []).map((item) => item.toString()).toList();
 }

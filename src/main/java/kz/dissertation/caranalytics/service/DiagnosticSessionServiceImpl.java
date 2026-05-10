@@ -147,6 +147,7 @@ public class DiagnosticSessionServiceImpl implements DiagnosticSessionService {
         report.setTowRecommended(reportDraft.towRecommended());
         report.setPrimaryIssue(reportDraft.primaryIssue());
         report.setSummary(reportDraft.summary());
+        report.setRiskForecast(reportDraft.riskForecast());
         report.setGeneratedAt(sessionStartedAt);
         report.getNextActions().addAll(reportDraft.nextActions());
         session.setReport(report);
@@ -252,6 +253,10 @@ public class DiagnosticSessionServiceImpl implements DiagnosticSessionService {
         return new RecommendationResponse(
                 recommendation.getType(),
                 recommendation.getMessage(),
+                translateRecommendationRu(recommendation.getMessage()),
+                recommendation.getMessage(),
+                recommendation.getActionLabel(),
+                translateActionLabelRu(recommendation.getActionLabel()),
                 recommendation.getActionLabel(),
                 recommendation.getReferenceCode(),
                 serviceCenters,
@@ -292,8 +297,139 @@ public class DiagnosticSessionServiceImpl implements DiagnosticSessionService {
                 report.getTowRecommended(),
                 report.getPrimaryIssue(),
                 report.getSummary(),
+                reportDraftRuSummary(report.getSummary()),
+                report.getSummary(),
+                report.getRiskForecast(),
+                reportDraftRuRisk(report.getRiskForecast()),
+                report.getRiskForecast(),
                 report.getGeneratedAt(),
+                report.getNextActions(),
+                report.getNextActions().stream().map(this::translateActionRu).toList(),
                 report.getNextActions()
         );
+    }
+
+    private String translateRecommendationRu(String value) {
+        if (value == null) {
+            return "";
+        }
+        if (value.contains("Clear DTC faults")) {
+            return "Явных DTC-ошибок не найдено. Продолжайте наблюдать за OBD2-параметрами и повторите диагностику, если симптомы сохранятся.";
+        }
+        if (value.contains("non-critical issue")) {
+            return "Код указывает на некритичную проблему. Начните с осмотра и повторите скан после короткой поездки.";
+        }
+        if (value.contains("basic repair steps")) {
+            return "Код может требовать базового ремонта: проверьте разъёмы, датчики, проводку, очистку или замену компонента.";
+        }
+        if (value.contains("replacing a faulty component")) {
+            return "Код указывает на вероятную замену неисправного компонента. Подготовьте поиск OEM или совместимой запчасти по VIN и двигателю.";
+        }
+        if (value.contains("is critical")) {
+            return "Код критический. Прекратите активную эксплуатацию автомобиля и обратитесь в СТО для углублённой диагностики.";
+        }
+        if (value.contains("Engine temperature")) {
+            return "Температура двигателя выше нормы. Срочно проверьте систему охлаждения, вентилятор радиатора и термостат.";
+        }
+        return value;
+    }
+
+    private String translateActionLabelRu(String value) {
+        if (value == null) {
+            return "";
+        }
+        return switch (value) {
+            case "Repeat scan later" -> "Повторить скан позже";
+            case "Inspect and monitor" -> "Осмотреть и наблюдать";
+            case "View repair steps" -> "Открыть шаги ремонта";
+            case "Find spare parts" -> "Найти запчасти";
+            case "Go to service center" -> "Обратиться в СТО";
+            case "Check cooling system" -> "Проверить охлаждение";
+            default -> value;
+        };
+    }
+
+    private String reportDraftRuSummary(String value) {
+        if (value == null) {
+            return "";
+        }
+        if (value.contains("Vehicle telemetry is currently stable")) {
+            return "Телеметрия автомобиля сейчас стабильна. Срочный ремонт не требуется.";
+        }
+        if (value.contains("Maintenance should be scheduled")) {
+            return "Диагностика нашла коды ошибок или отклонения телеметрии. Нужно запланировать обслуживание.";
+        }
+        if (value.contains("Serious issues were detected")) {
+            return "Обнаружены серьёзные признаки неисправности. Автомобиль нужно как можно скорее показать специалисту.";
+        }
+        if (value.contains("Critical fault pattern")) {
+            return "Обнаружен критический набор признаков. Дальнейшая езда может повредить автомобиль или создать риск безопасности.";
+        }
+        return value;
+    }
+
+    private String reportDraftRuRisk(String value) {
+        if (value == null) {
+            return "";
+        }
+        if (value.contains("baseline")) {
+            return "Активной тенденции поломки пока не видно. Используйте этот скан как базовый и повторите диагностику при появлении симптомов.";
+        }
+        if (value.contains("Cooling anomalies")) {
+            return "Проблемы охлаждения могут начаться с датчика или уровня антифриза, а затем привести к перегреву, повреждению ГБЦ и остановке в дороге.";
+        }
+        if (value.contains("Low oil pressure")) {
+            return "Низкое давление масла быстро становится опасным: езда может повредить вкладыши, турбину и сам двигатель.";
+        }
+        if (value.contains("Low voltage")) {
+            return "Низкое напряжение может начаться с случайных предупреждений, а затем привести к отказу запуска и ошибкам блоков управления.";
+        }
+        if (value.contains("look minor")) {
+            return "Текущие коды выглядят не критично, но при повторении могут указывать на износ проводки, разъёмов или датчика. Проверьте, вернутся ли они после сброса и короткой поездки.";
+        }
+        if (value.contains("not an immediate stop")) {
+            return "Сейчас это не сигнал немедленно остановиться, но игнорирование может повысить расход топлива, повредить связанные датчики или перейти в постоянную ошибку под нагрузкой.";
+        }
+        if (value.contains("can progress to")) {
+            return "Эти ошибки могут перейти в пропуски зажигания, перегрев, проблемы зарядки или аварийный режим трансмиссии. Ограничьте поездки до выяснения причины.";
+        }
+        return value;
+    }
+
+    private String translateActionRu(String value) {
+        if (value == null) {
+            return "";
+        }
+        if (value.startsWith("Keep the vehicle")) {
+            return "Наблюдайте за автомобилем и повторите OBD2-скан, если симптомы вернутся.";
+        }
+        if (value.startsWith("Store the current")) {
+            return "Сохраните текущую сессию как базу для сравнения.";
+        }
+        if (value.startsWith("Book a maintenance")) {
+            return "Запишитесь на обслуживание и покажите сохранённую диагностику мастеру.";
+        }
+        if (value.startsWith("Inspect wiring")) {
+            return "Проверьте проводку, разъёмы и связанные датчики перед заменой деталей.";
+        }
+        if (value.startsWith("Limit vehicle")) {
+            return "Ограничьте поездки, пока СТО не подтвердит причину неисправности.";
+        }
+        if (value.startsWith("Prepare VIN")) {
+            return "Подготовьте поиск запчастей по VIN для подозреваемого узла.";
+        }
+        if (value.startsWith("Stop intensive")) {
+            return "Прекратите активную езду и организуйте срочную техническую проверку.";
+        }
+        if (value.startsWith("Consider vehicle towing")) {
+            return "Рассмотрите эвакуацию, если есть проблемы с маслом или охлаждением.";
+        }
+        if (value.startsWith("Export DTC codes")) {
+            return value.replace("Export DTC codes for repair history:", "Сохраните DTC-коды для истории ремонта:");
+        }
+        if (value.startsWith("Re-check abnormal")) {
+            return "Повторно проверьте ненормальные значения после осмотра разъёмов и датчиков.";
+        }
+        return value;
     }
 }

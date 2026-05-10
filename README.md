@@ -7,7 +7,7 @@ Spring Boot проект для диссертации по интеллекту
 - REST API для регистрации автомобилей и загрузки диагностических сессий
 - live scan через `ELM327 Wi-Fi` адаптер
 - модель предметной области под `OBD2`, неисправности, сырые фреймы и рекомендации
-- H2 база для локального прототипирования
+- PostgreSQL база с Flyway-миграциями
 - валидация входных данных
 - базовый AI-like сервис рекомендаций по fault codes и телеметрии
 - отдельный диагностический отчет с уровнем срочности и действиями
@@ -42,7 +42,31 @@ Spring Boot проект для диссертации по интеллекту
 
 ## Запуск
 
-Нужны `Java 17+` и `Maven 3.9+`.
+Нужны `Java 17+`, `Maven 3.9+` и `Docker`.
+
+### PostgreSQL
+
+Локальная база поднимается контейнером:
+
+```bash
+docker compose up -d
+```
+
+Приложение по умолчанию подключается к:
+
+- JDBC URL: `jdbc:postgresql://localhost:5432/marketplace`
+- User: `soltayev`
+- Password: `myappl`
+
+Параметры можно переопределить переменными окружения:
+
+- `DB_URL`
+- `DB_USERNAME`
+- `DB_PASSWORD`
+
+Схема и справочные данные создаются Flyway-миграциями из `src/main/resources/db/migration`.
+
+### Backend
 
 ```bash
 mvn spring-boot:run
@@ -51,13 +75,6 @@ mvn spring-boot:run
 После запуска:
 
 - API: `http://localhost:8080/api/vehicles`
-- H2 console: `http://localhost:8080/h2-console`
-
-Параметры H2:
-
-- JDBC URL: `jdbc:h2:mem:carsdb`
-- User: `sa`
-- Password: `password`
 
 ## Flutter frontend
 

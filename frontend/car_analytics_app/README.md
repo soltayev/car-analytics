@@ -15,3 +15,12 @@ A few resources to get you started if this is your first Flutter project:
 For help getting started with Flutter development, view the
 [online documentation](https://docs.flutter.dev/), which offers tutorials,
 samples, guidance on mobile development, and a full API reference.
+
+
+for docker
+docker run --name car-analytics \
+-e POSTGRES_USER=soltayev \
+-e POSTGRES_PASSWORD=myappl \
+-e POSTGRES_DB=marketplace \
+-p 5432:5432 \
+-d postgres
