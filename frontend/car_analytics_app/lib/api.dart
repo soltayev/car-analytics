@@ -302,8 +302,13 @@ class ServiceCenter {
 
   String get badge => emergencySupport ? '24/7' : rating.toString();
 
-  String get distanceLabel =>
-      distanceKm == null ? city : '${distanceKm!.toStringAsFixed(2)} km';
+  String distanceLabel(AppLanguage language) {
+    if (distanceKm == null) {
+      return city;
+    }
+    final value = distanceKm!.toStringAsFixed(2);
+    return language == AppLanguage.ru ? '$value км' : '$value km';
+  }
 }
 
 class CarAnalyticsApi {
@@ -506,5 +511,7 @@ String _string(dynamic value, [String fallback = '']) {
 
 List<String> _stringList(dynamic value, [dynamic fallback]) {
   final source = value is List<dynamic> ? value : fallback;
-  return (source as List<dynamic>? ?? []).map((item) => item.toString()).toList();
+  return (source as List<dynamic>? ?? [])
+      .map((item) => item.toString())
+      .toList();
 }
